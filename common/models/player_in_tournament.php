@@ -1,7 +1,7 @@
 <?
 include_once('fsb/model.php');
 
-class modTour extends fsb_model {
+class modPlayerInTournament extends fsb_model {
 
 	function FillDataFields()	{
 	}

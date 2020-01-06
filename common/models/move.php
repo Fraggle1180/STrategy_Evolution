@@ -1,7 +1,7 @@
 <?
 include_once('fsb/model.php');
 
-class modTour extends fsb_model {
+class modMove extends fsb_model {
 
 	function FillDataFields()	{
 	}

@@ -90,7 +90,7 @@ CREATE TABLE `d_tournament` (
   `price2` bigint(20) NOT NULL,
   `result1` smallint(6) NOT NULL,
   `result2` smallint(6) NOT NULL,
-  `noice` smallint(6) NOT NULL
+  `noise` smallint(6) NOT NULL
 ) ENGINE=MyISAM DEFAULT CHARSET=utf8;
 
 -- --------------------------------------------------------
