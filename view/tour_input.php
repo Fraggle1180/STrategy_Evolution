@@ -27,8 +27,13 @@ $total_players = 100;
 </tr>
 
 <tr>
-<td><b>Уровень шума</b></td><td><input type="text" name="noise" size="3" value="0"></td>
+<td><b>Шум (вход)</b></td><td><input type="text" name="noise_in" size="3" value="0"></td>
+<td><b>Шум (выход)</b></td><td><input type="text" name="noise_out" size="3" value="0"></td>
+</tr>
+
+<tr>
 <td><b>Ходов в игре</b></td><td><input type="text" name="gamelen" size="3" value="30"></td>
+<td><b></b></td><td></td>
 </tr>
 </table>
 

@@ -6,12 +6,23 @@ $ctrTour = new ctrTour();
 
 
 #передать параметры в ctrTour 
-$ctrTour->set('price1',  $_REQUEST['price1']);
-$ctrTour->set('price2',  $_REQUEST['price2']);
-$ctrTour->set('result1', $_REQUEST['result1']);
-$ctrTour->set('result2', $_REQUEST['result2']);
-$ctrTour->set('noise',   $_REQUEST['noise']);
-$ctrTour->set('gamelen', $_REQUEST['gamelen']);
+$ctrTour->set_param('price1',	$_REQUEST['price1']);
+$ctrTour->set_param('price2',	$_REQUEST['price2']);
+$ctrTour->set_param('result1',	$_REQUEST['result1']);
+$ctrTour->set_param('result2',	$_REQUEST['result2']);
+$ctrTour->set_param('noise_in',	$_REQUEST['noise_in']);
+$ctrTour->set_param('noise_out',$_REQUEST['noise_out']);
+$ctrTour->set_param('gamelen',	$_REQUEST['gamelen']);
+
+$totalPlayers = $_REQUEST['total_players'];
+for ( $n = 1; $n <= $totalPlayers; $n++ )	{
+	$strat = $_REQUEST['player'.$n.'_strategy'];
+	$param = $_REQUEST['player'.$n.'_params'];
+
+	if ($strat == 'none')	continue;
+
+	$ctrTour->set_player($n, $strat, $param);
+}
 
 
 #проверить, все ли параметры на месте
