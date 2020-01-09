@@ -70,6 +70,17 @@ abstract class ctrStrategy	{
 
 	protected function getOtherSideMove($ago)	{
 		$move_number = $this->current_move-$ago;
+		if (!array_key_exists($move_number-1, $this->move_sequence))	return null;
 		return $this->move_sequence[$move_number-1]->get('player'.$this->player_side.'_perception');
+	}
+
+	protected function getMyLastMove()	{
+		return $this->getMyMove(1);
+	}
+
+	protected function getMyMove($ago)	{
+		$move_number = $this->current_move-$ago;
+		if (!array_key_exists($move_number-1, $this->move_sequence))	return null;
+		return $this->move_sequence[$move_number-1]->get('player'.$this->player_side.'_decision');
 	}
 };

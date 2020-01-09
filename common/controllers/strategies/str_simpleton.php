@@ -1,8 +1,8 @@
 <?
-include_once('common.php');
+include_once('str_copycat.php');
 
 # Простак: начать отдаванием, если первый ход другого игрока - отдающий, то в дальнейшем повторять ходы другого игрока, иначе - делать противоположное другому игроку
-class ctrStrategy_simpleton extends ctrStrategy {
+class ctrStrategy_simpleton extends ctrStrategy_copycat {
 	protected $bRevert;
 
 	protected function MakeDecision()	{
@@ -12,7 +12,7 @@ class ctrStrategy_simpleton extends ctrStrategy {
 			$this->bRevert = ($this->getOtherSideLastMove() == 1) ? 0 : 1;
 		}
 
-		$last_res  = $this->getOtherSideLastMove();
+		$last_res  = parent::MakeDecision();
 		return $this->bRevert ? (1 - $last_res) : $last_res;
 	}
 

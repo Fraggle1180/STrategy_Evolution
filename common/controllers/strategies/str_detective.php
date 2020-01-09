@@ -1,8 +1,8 @@
 <?
-include_once('common.php');
+include_once('str_copycat.php');
 
 # Детектив: ОЗОО, затем - если были забирания, то копировать, если не было забираний, то всегда забирать
-class ctrStrategy_detective extends ctrStrategy {
+class ctrStrategy_detective extends ctrStrategy_copycat {
 	protected $bAlwaysTake;
 
 	protected function MakeDecision()	{
@@ -22,7 +22,7 @@ class ctrStrategy_detective extends ctrStrategy {
 			$this->bAlwaysTake = (($m1 == 1) and ($m2 == 1) and ($m3 == 1) and ($m4 == 1)) ? 1 : 0;
 		}
 
-		return ($this->bAlwaysTake) ? 0 : $this->getOtherSideLastMove();
+		return ($this->bAlwaysTake) ? 0 : parent::MakeDecision();
 	}
 
 	function setParam($param = null)	{

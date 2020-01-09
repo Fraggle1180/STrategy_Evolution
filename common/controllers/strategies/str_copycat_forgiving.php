@@ -1,13 +1,19 @@
 <?
-include_once('common.php');
+include_once('str_copycat.php');
 
 # Копировать с прощением: так же, как лучший из N предыдущих ходов другого игрока
-class ctrStrategy_copycat_forgiving extends ctrStrategy {
+class ctrStrategy_copycat_forgiving extends ctrStrategy_copycat {
 	protected $remember_moves_number;
 
 	protected function MakeDecision()	{
-		throw new Exception('not implemented');
-		return -1;
+		for( $best_move = null, $n = 1;	$n <= $this->remember_moves_number; $n++ )	{
+			$move = $this->getOtherSideMove($n);
+			if (is_null($move))	continue;
+
+			$best_move = (is_null($best_move)) ? $move : max($best_move, $move);
+		}
+
+		return is_null($best_move) ? 1 : $best_move;
 	}
 
 	function setParam($param = null)	{
