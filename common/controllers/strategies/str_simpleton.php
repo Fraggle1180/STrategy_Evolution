@@ -1,6 +1,7 @@
 <?
 include_once('common.php');
 
+# Простак: начать отдаванием, если первый ход другого игрока - отдающий, то в дальнейшем повторять ходы другого игрока, иначе - делать противоположное другому игроку
 class ctrStrategy_simpleton extends ctrStrategy {
 	protected $bRevert;
 

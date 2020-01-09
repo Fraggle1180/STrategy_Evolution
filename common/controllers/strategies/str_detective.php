@@ -1,6 +1,7 @@
 <?
 include_once('common.php');
 
+# Детектив: ОЗОО, затем - если были забирания, то копировать, если не было забираний, то всегда забирать
 class ctrStrategy_detective extends ctrStrategy {
 	protected $bAlwaysTake;
 

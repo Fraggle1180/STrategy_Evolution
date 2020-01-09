@@ -1,6 +1,7 @@
 <?
 include_once('common.php');
 
+# Рандом
 class ctrStrategy_random extends ctrStrategy {
 	protected $random_level;
 

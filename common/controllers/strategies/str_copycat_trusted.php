@@ -1,6 +1,7 @@
 <?
 include_once('common.php');
 
+# Копировать с доверием: если создано доверие (из N предыдущих ходов другого игрока не менее M% были отдающими), то использовать копирование с ребалансировкой длины L, иначе - копирование
 class ctrStrategy_copycat_trusted extends ctrStrategy {
 	protected $trust_period;
 	protected $trust_level;

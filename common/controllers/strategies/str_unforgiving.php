@@ -1,6 +1,7 @@
 <?
 include_once('common.php');
 
+# Непрощающий: отдавать до первого обмана с другой стороны, затем - забирать
 class ctrStrategy_unforgiving extends ctrStrategy {
 	protected $wasBetrayed;
 

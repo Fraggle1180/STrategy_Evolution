@@ -1,6 +1,7 @@
 <?
 include_once('common.php');
 
+# Копировать с прощением: так же, как лучший из N предыдущих ходов другого игрока
 class ctrStrategy_copycat_forgiving extends ctrStrategy {
 	protected $remember_moves_number;
 
