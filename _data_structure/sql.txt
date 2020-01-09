@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Хост: 127.0.0.1
--- Время создания: Янв 06 2020 г., 10:30
+-- Время создания: Янв 09 2020 г., 07:12
 -- Версия сервера: 5.7.14
 -- Версия PHP: 5.6.25
 
@@ -20,9 +20,6 @@ USE `strategy_evolution`;
 
 --
 -- Структура таблицы `d_game`
---
--- Создание: Янв 06 2020 г., 09:13
--- Последнее обновление: Янв 06 2020 г., 09:13
 --
 
 DROP TABLE IF EXISTS `d_game`;
@@ -43,9 +40,6 @@ CREATE TABLE `d_game` (
 --
 -- Структура таблицы `d_move`
 --
--- Создание: Янв 06 2020 г., 09:13
--- Последнее обновление: Янв 06 2020 г., 09:13
---
 
 DROP TABLE IF EXISTS `d_move`;
 CREATE TABLE `d_move` (
@@ -53,7 +47,11 @@ CREATE TABLE `d_move` (
   `id_game` bigint(20) NOT NULL,
   `number_move` int(11) NOT NULL,
   `player1_decision` smallint(6) NOT NULL,
-  `player2_decision` smallint(6) NOT NULL
+  `player2_decision` smallint(6) NOT NULL,
+  `player1_action` smallint(6) NOT NULL,
+  `player2_action` smallint(6) NOT NULL,
+  `player1_perception` smallint(6) NOT NULL,
+  `player2_perception` smallint(6) NOT NULL
 ) ENGINE=MyISAM DEFAULT CHARSET=utf8;
 
 -- --------------------------------------------------------
@@ -61,25 +59,20 @@ CREATE TABLE `d_move` (
 --
 -- Структура таблицы `d_player_in_tournament`
 --
--- Создание: Янв 06 2020 г., 09:13
--- Последнее обновление: Янв 06 2020 г., 09:13
---
 
 DROP TABLE IF EXISTS `d_player_in_tournament`;
 CREATE TABLE `d_player_in_tournament` (
   `id` bigint(20) NOT NULL,
   `id_tournament` bigint(20) NOT NULL,
   `player_number` smallint(6) NOT NULL,
-  `player_result` smallint(6) NOT NULL
+  `player_strategy` varchar(1024) DEFAULT NULL,
+  `player_result` smallint(6) DEFAULT NULL
 ) ENGINE=MyISAM DEFAULT CHARSET=utf8;
 
 -- --------------------------------------------------------
 
 --
 -- Структура таблицы `d_tournament`
---
--- Создание: Янв 06 2020 г., 09:13
--- Последнее обновление: Янв 06 2020 г., 09:13
 --
 
 DROP TABLE IF EXISTS `d_tournament`;
@@ -90,16 +83,14 @@ CREATE TABLE `d_tournament` (
   `price2` bigint(20) NOT NULL,
   `result1` smallint(6) NOT NULL,
   `result2` smallint(6) NOT NULL,
-  `noise` smallint(6) NOT NULL
+  `noise_in` smallint(6) NOT NULL,
+  `noise_out` smallint(6) NOT NULL
 ) ENGINE=MyISAM DEFAULT CHARSET=utf8;
 
 -- --------------------------------------------------------
 
 --
 -- Структура таблицы `sys_profiler`
---
--- Создание: Янв 06 2020 г., 10:18
--- Последнее обновление: Янв 06 2020 г., 10:19
 --
 
 DROP TABLE IF EXISTS `sys_profiler`;
@@ -110,7 +101,6 @@ CREATE TABLE `sys_profiler` (
   `Created` bigint(20) NOT NULL,
   `Duration` double NOT NULL
 ) ENGINE=MyISAM DEFAULT CHARSET=utf8;
-
 
 --
 -- Индексы сохранённых таблиц
@@ -164,4 +154,4 @@ ALTER TABLE `d_player_in_tournament`
 -- AUTO_INCREMENT для таблицы `d_tournament`
 --
 ALTER TABLE `d_tournament`
-  MODIFY `id` bigint(20) NOT NULL AUTO_INCREMENT;
+  MODIFY `id` bigint(20) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=2;

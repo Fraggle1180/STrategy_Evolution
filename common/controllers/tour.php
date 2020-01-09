@@ -26,7 +26,7 @@ class ctrTour	{
 	function set_player($num, $strat, $param)	{
 		if ($num > $this->players['max_num'])	$this->players['max_num'] = $num;
 
-		$this->players[$num] = array( 'strategy' => $strat, 'params' => $param, 'total_score' => 0 );
+		$this->players[$num] = array( 'strategy' => $strat, 'params' => $param );
 		return true;
 	}
 
@@ -55,32 +55,47 @@ class ctrTour	{
 
 
 		for( $p = 1; $p <= $this->players['max_num']; $p++ )	{
-			$this->players[$p]['total_score'] = 0;
+			if (!array_key_exists($p, $this->players) or is_null($this->players[$p]))	continue;
+
+			$this->players[$p]['model'] = new modPlayerInTournament;
+
+			$st = $this->players[$p]['strategy'];
+			$pr = $this->players[$p]['params'];
+			$db = $st . ((is_null($pr) or !$pr) ? '' : " ($pr)");
+
+			$this->players[$p]['model']->set('id_tournament', $this->data['tour_id']);
+			$this->players[$p]['model']->set('player_number', $p);
+			$this->players[$p]['model']->set('player_strategy', $db);
+			$this->players[$p]['model']->set('player_result', 0);
+
+			$this->players[$p]['model']->Save();
 		}
 
 
 		for( $p1 = 1; $p1 <= $this->players['max_num']; $p1++ )	{
-			if (is_null($this->players[$p1]))	continue;
+			if (!array_key_exists($p1, $this->players) or is_null($this->players[$p1]))	continue;
 
 			for( $p2 = 1; $p2 <= $this->players['max_num']; $p2++ )	{
-				if (is_null($this->players[$p2]))	continue;
+				if (!array_key_exists($p2, $this->players) or is_null($this->players[$p2]))	continue;
 
-				$game_res = $this->run_game($p1, $p2);
-
-				$this->players[$p1]['total_score'] += $game_res['player1']['score'];
-				$this->players[$p2]['total_score'] += $game_res['player2']['score'];
+				$this->run_game($p1, $p2);
 			}
+		}
+
+		for( $p = 1; $p <= $this->players['max_num']; $p++ )	{
+			if (!array_key_exists($p, $this->players) or is_null($this->players[$p]))	continue;
+
+			$this->players[$p]['model']->Save();
 		}
 	}
 
 	function get_results()	{
-		var_dump($this); die();
-
-		return 'to be ...';
+		return modPlayerInTournament::getRating($this->data['tour_id']);
 	}
 
 
 	protected function run_game($pl1, $pl2)	{
+		# параметры очередной игры
 		$p_price1	= $this->param['price1'];
 		$p_price2	= $this->param['price2'];
 		$p_result1	= $this->param['result1'];
@@ -88,32 +103,80 @@ class ctrTour	{
 		$p_noise_in	= $this->param['noise_in'];
 		$p_noise_out	= $this->param['noise_out'];
 		$p_gamelen	= $this->param['gamelen'];
+		$d_tour_id	= $this->data['tour_id'];
 
 
-		$mod_game = new modGame();
-		$mod_game->Save();
-
-		$move_sequence = array();
-
+		# две стороны игры
 		$player1	= $this->players[$pl1];
 		$str_class1	= ctrStrategy::getClass_byName($player1['strategy']);
 		$pl_strategy1	= new $str_class1($move_sequence, 1);
+		$pl_strategy1->setParam($player1['params']);
+		$mod_payer1	= &$this->players[$pl1]['model'];
 
 		$player2	= $this->players[$pl2];
 		$str_class2	= ctrStrategy::getClass_byName($player2['strategy']);
 		$pl_strategy2	= new $str_class2($move_sequence, 2);
+		$pl_strategy1->setParam($player1['params']);
+		$mod_payer2	= &$this->players[$pl2]['model'];
 
+
+		# модель данных игры
+		$mod_game = new modGame();
+
+		$mod_game->set('id_tournament',	$d_tour_id);
+		$mod_game->set('start_at',	time());
+		$mod_game->set('player1_number', $pl1);
+		$mod_game->set('player2_number', $pl2);
+		$mod_game->set('player1_strategy',	$mod_payer1->get('player_strategy'));
+		$mod_game->set('player2_strategy',	$mod_payer2->get('player_strategy'));
+		$mod_game->set('player1_result', 0);
+		$mod_game->set('player2_result', 0);
+
+		$mod_game->Save();
+
+		$d_game_id	= $mod_game->get('id');
+
+
+		# моделировать игру
+		# результат: в моделях игроков изменятся player_score в соотвествии с результатом этой игры
+		$move_sequence = array();
 
 		for ( $m = 1; $m <= $p_gamelen; $m++ )	{
+			$p1_decision = $pl_strategy1->MakeMove();
+			$p2_decision = $pl_strategy2->MakeMove();
+
+			$p1_action   = (rand(1, 100) > $p_noise_in) ? $p1_decision : (1 - $p1_decision);
+			$p2_action   = (rand(1, 100) > $p_noise_in) ? $p2_decision : (1 - $p2_decision);
+
+			$p1_result   = - ($p1_action * $p_price1) + $p2_action * $p_result1;
+			$p2_result   = - ($p2_action * $p_price2) + $p1_action * $p_result2;
+
+			$p1_perception = (rand(1, 100) > $p_noise_out) ? $p2_action : (1 - $p2_action);
+			$p2_perception = (rand(1, 100) > $p_noise_out) ? $p1_action : (1 - $p1_action);
+
+
 			$move = new modMove;
 
-			$move_player1 = $pl_strategy1->MakeMove();
-			$move_player2 = $pl_strategy2->MakeMove();
+			$move->set('id_game',		$d_game_id);
+			$move->set('number_move',	$m);
+			$move->set('player1_decision',	$p1_decision);
+			$move->set('player2_decision',	$p2_decision);
+			$move->set('player1_action',	$p1_action);
+			$move->set('player2_action',	$p2_action);
+			$move->set('player1_perception', $p1_perception);
+			$move->set('player2_perception', $p2_perception);
+
+			$move->Save();
+
+
+			$mod_payer1->set('player_result', $mod_payer1->get('player_result') + $p1_result);
+			$mod_payer1->Save();
+
+			$mod_payer2->set('player_result', $mod_payer2->get('player_result') + $p2_result);
+			$mod_payer2->Save();
 
 
 			$move_sequence[] = $move;
 		}
-
-		return array( 'player1' => array( 'score' => -1 ), 'player2' => array( 'score' => -1 ) );
 	}
 };
