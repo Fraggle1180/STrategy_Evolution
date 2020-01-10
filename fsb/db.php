@@ -56,6 +56,10 @@ class fsb_dbconnection	{
 	}
 
 	function escape($txt)	{
+		$type = gettype($txt);
+		if (($type == 'integer'))
+			return $txt;
+
 		$cached = $this->escape_cache->get($txt);
 		if ($cached)	return $cached;
 
@@ -66,6 +70,25 @@ class fsb_dbconnection	{
 
 		return $escaped;
 	}
+
+/*
+////////////////////////////////////////////////////////////////////////////////////////////////////
+	function escape_nocache($txt)	{
+		$type = gettype($txt);
+		if (($typ == 'integer'))
+			return $txt;
+
+		if (!$this->is_open() and !$this->open())	throw new Exception('DB connection: unable to connect');
+		$escaped = mysqli_real_escape_string($this->link, $txt);
+
+		return $escaped;
+	}
+
+	function get_link()	{
+		return $this->link;
+	}
+////////////////////////////////////////////////////////////////////////////////////////////////////
+*/
 
 	function get_insert_id()	{
 		if (!$this->is_open())	return null;

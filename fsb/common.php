@@ -5,6 +5,7 @@ include_once('log.php');
 include_once('cache_mem.php');
 include_once('db.php');
 include_once('model.php');
+include_once('models.php');
 include_once('cache.php');
 include_once('lock.php');
 include_once('profiler.php');

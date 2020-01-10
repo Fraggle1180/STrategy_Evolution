@@ -1,4 +1,38 @@
 <?
+/*
+$profiler	= new fsb_profiler;
+$tot = 100000;
+
+$db		= new fsb_dbconnection();
+$db_link	= $db->get_link();
+
+$profiler->Tick('test');
+$cache = array();
+for( $n = 0; $n < $tot; $n++ )	{
+	$v = rand(0, 1000);
+	$k = md5('('.gettype($v).'): '.$v);
+
+	if (!array_key_exists($k, $cache))	{
+		$cache[$k] = $v;
+	}
+
+}
+$profiler->Tick('test');
+for( $n = 0; $n < $tot; $n++ )	{
+	$v = rand(0, 1000);
+	$k = intval(md5('('.gettype($v).'): '.$v), 16);
+
+	if (!array_key_exists($k, $cache))	{
+		$cache[$k] = $v;
+	}
+
+}
+$profiler->Tick('test');
+
+
+return;
+/* */
+
 include_once('common/models/tour.php');
 include_once('common/controllers/tour.php');
 

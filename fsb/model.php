@@ -46,8 +46,6 @@ abstract class fsb_model	{
 	}
 
 	private function escapeDBField($field)	{
-$profiler = new fsb_profiler;
-$profiler->Tick('model::escapeDBField');
 		$link = '$this->dbFields';
 		if (is_array($field))	{
 			$link .= "['".implode("']['", $field)."']";
@@ -63,9 +61,7 @@ $profiler->Tick('model::escapeDBField');
 		}
 		if (!$exist)	return null;
 
-$profiler->Tick('model::escapeDBField');
 		eval('$lnk = &'.$link.';');
-$profiler->Tick('model::escapeDBField');
 		if (is_array($lnk))	{
 			foreach( $lnk as $fld => $val )
 				if (is_array($lnk[$fld]))	{
@@ -76,7 +72,6 @@ $profiler->Tick('model::escapeDBField');
 					$lnk[$fld] = $this->escapeDBValue($val);
 				}
 		}	else	$lnk = $this->escapeDBValue($lnk);
-$profiler->Tick('model::escapeDBField');
 
 		return true;
 	}

@@ -9,11 +9,13 @@ class ctrTour	{
 	protected $param;
 	protected $players;
 	protected $data;
+	protected $stats;
 
 	function __construct()	{
 		$this->param	= array( 'price1' => null, 'price2' => null, 'result1' => null, 'result2' => null, 'noise_in' => null, 'noise_out' => null, 'gamelen' => null );
 		$this->players	= array( 'max_num' => 0 );
 		$this->data	= array( );
+		$this->stats	= array( 'time' => null, 'players' => 0, 'games' => 0, 'moves' => 0 );
 	}
 
 	function set_param($param, $value)	{
@@ -39,6 +41,8 @@ class ctrTour	{
 	}
 
 	function run()	{
+		$this->stats['time'] = time();
+
 		$mod_tour = new modTour();
 
 		$mod_tour->set('game_length',	$this->param['gamelen']);
@@ -56,6 +60,8 @@ class ctrTour	{
 
 		for( $p = 1; $p <= $this->players['max_num']; $p++ )	{
 			if (!array_key_exists($p, $this->players) or is_null($this->players[$p]))	continue;
+
+			$this->stats['players']++;
 
 			$this->players[$p]['model'] = new modPlayerInTournament;
 
@@ -87,14 +93,22 @@ class ctrTour	{
 
 			$this->players[$p]['model']->Save();
 		}
+
+
+		$this->stats['time'] = time() - $this->stats['time'];
 	}
 
 	function get_results()	{
-		return modPlayerInTournament::getRating($this->data['tour_id']);
+		return array( 'rating' => modPlayerInTournament::getRating($this->data['tour_id']), 'stats' => $this->stats );
 	}
 
 
 	protected function run_game($pl1, $pl2)	{
+		set_time_limit(300);
+
+		$this->stats['games']++;
+
+
 		# параметры очередной игры
 		$p_price1	= $this->param['price1'];
 		$p_price2	= $this->param['price2'];
@@ -147,6 +161,9 @@ class ctrTour	{
 
 		for ( $m = 1; $m <= $p_gamelen; $m++ )	{
 			$profiler->Tick('ctrTour::game_cycle', $profiler_tick_param);
+
+			$this->stats['moves']++;
+
 			$p1_decision = $pl_strategy1->MakeMove();
 			$p2_decision = $pl_strategy2->MakeMove();
 
