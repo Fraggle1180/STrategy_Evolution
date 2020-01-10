@@ -1,6 +1,6 @@
 <h2>Результаты тура</h2>
 
-<table width="240px" border="1">
+<table border="1">
 
 <tr>
 <td><b>№</b></td>

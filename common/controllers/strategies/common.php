@@ -33,9 +33,12 @@ abstract class ctrStrategy	{
 	}
 
 	static function translateName($name, $lang)	{
+		$m = array();
+		$strat_name = (preg_match('|(.+)\s+\(.*\)|', $name, $m)) ? $m[1] : $name;
+
 		switch ($lang)	{
 			case 'ru':	{
-				switch ($name)	{
+				switch ($strat_name)	{
 					case 'give':		return 'Отдающий';
 					case 'take':		return 'Забирающий';
 					case 'copycat':		return 'Копирующий';
@@ -47,7 +50,7 @@ abstract class ctrStrategy	{
 					case 'copycat_rebalance':	return 'Копирующий с ребалансировкой';
 					case 'copycat_trusted':		return 'Копирующий с доверием';
 
-					default:	throw new Exception("Unknown strategy code: $name");
+					default:	throw new Exception("Unknown strategy code: $strat_name /full: $name/");
 				}
 			}
 

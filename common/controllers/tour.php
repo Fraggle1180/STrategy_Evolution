@@ -141,7 +141,12 @@ class ctrTour	{
 		# результат: в моделях игроков изменятся player_score в соотвествии с результатом этой игры
 		$move_sequence = array();
 
+		$profiler = new fsb_profiler;
+		$profiler_tick_param = "($pl1 vs $pl2) s1: ".$player1['strategy'].", s2: ".$player2['strategy'].", m: $p_gamelen";
+		$profiler->Tick('ctrTour::game', $profiler_tick_param);
+
 		for ( $m = 1; $m <= $p_gamelen; $m++ )	{
+			$profiler->Tick('ctrTour::game_cycle', $profiler_tick_param);
 			$p1_decision = $pl_strategy1->MakeMove();
 			$p2_decision = $pl_strategy2->MakeMove();
 
@@ -166,17 +171,26 @@ class ctrTour	{
 			$move->set('player1_perception', $p1_perception);
 			$move->set('player2_perception', $p2_perception);
 
-			$move->Save();
+			$profiler->Tick('ctrTour::game_cycle', $profiler_tick_param);
+			$move->Save();		# todo: BIG performance problem!!!
+			$profiler->Tick('ctrTour::game_cycle', $profiler_tick_param);
 
 
+			$profiler->Tick('ctrTour::game_cycle', $profiler_tick_param);
 			$mod_payer1->set('player_result', $mod_payer1->get('player_result') + $p1_result);
-			$mod_payer1->Save();
+			$profiler->Tick('ctrTour::game_cycle', $profiler_tick_param);
+			$mod_payer1->Save();	# todo: performance problem!!!
+			$profiler->Tick('ctrTour::game_cycle', $profiler_tick_param);
 
+			$profiler->Tick('ctrTour::game_cycle', $profiler_tick_param);
 			$mod_payer2->set('player_result', $mod_payer2->get('player_result') + $p2_result);
-			$mod_payer2->Save();
+			$profiler->Tick('ctrTour::game_cycle', $profiler_tick_param);
+			$mod_payer2->Save();	# todo: performance problem!!!
+			$profiler->Tick('ctrTour::game_cycle', $profiler_tick_param);
 
 
 			$move_sequence[] = $move;
+			$profiler->Tick('ctrTour::game_cycle', $profiler_tick_param);
 		}
 	}
 };

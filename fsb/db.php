@@ -6,6 +6,7 @@ class fsb_dbconnection	{
 	protected $error;
 	protected $log;
 	protected $writelog;
+	protected $escape_cache;
 
 	function __construct()	{
 		$this->close(true);
@@ -14,6 +15,8 @@ class fsb_dbconnection	{
 		$this->writelog = $settings->get('db::common::writelog');
 
 		$this->log = fsb_getLog();
+
+		$this->escape_cache = new fsb_cache_mem;
 	}
 
 	function __destruct()	{
@@ -53,8 +56,15 @@ class fsb_dbconnection	{
 	}
 
 	function escape($txt)	{
+		$cached = $this->escape_cache->get($txt);
+		if ($cached)	return $cached;
+
 		if (!$this->is_open() and !$this->open())	throw new Exception('DB connection: unable to connect');
-		return mysqli_real_escape_string($this->link, $txt);
+		$escaped = mysqli_real_escape_string($this->link, $txt);
+
+		$this->escape_cache->set($txt, $escaped, time() + 60);
+
+		return $escaped;
 	}
 
 	function get_insert_id()	{
