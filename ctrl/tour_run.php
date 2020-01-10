@@ -1,45 +1,11 @@
 <?
-/*
-$profiler	= new fsb_profiler;
-$tot = 100000;
-
-$db		= new fsb_dbconnection();
-$db_link	= $db->get_link();
-
-$profiler->Tick('test');
-$cache = array();
-for( $n = 0; $n < $tot; $n++ )	{
-	$v = rand(0, 1000);
-	$k = md5('('.gettype($v).'): '.$v);
-
-	if (!array_key_exists($k, $cache))	{
-		$cache[$k] = $v;
-	}
-
-}
-$profiler->Tick('test');
-for( $n = 0; $n < $tot; $n++ )	{
-	$v = rand(0, 1000);
-	$k = intval(md5('('.gettype($v).'): '.$v), 16);
-
-	if (!array_key_exists($k, $cache))	{
-		$cache[$k] = $v;
-	}
-
-}
-$profiler->Tick('test');
-
-
-return;
-/* */
-
 include_once('common/models/tour.php');
 include_once('common/controllers/tour.php');
 
 $ctrTour = new ctrTour();
 
 
-#ïåðåäàòü ïàðàìåòðû â ctrTour 
+#Ð¿ÐµÑ€ÐµÐ´Ð°Ñ‚ÑŒ Ð¿Ð°Ñ€Ð°Ð¼ÐµÑ‚Ñ€Ñ‹ Ð² ctrTour 
 $ctrTour->set_param('price1',	$_REQUEST['price1']);
 $ctrTour->set_param('price2',	$_REQUEST['price2']);
 $ctrTour->set_param('result1',	$_REQUEST['result1']);
@@ -59,22 +25,22 @@ for ( $n = 1; $n <= $totalPlayers; $n++ )	{
 }
 
 
-#ïðîâåðèòü, âñå ëè ïàðàìåòðû íà ìåñòå
+#Ð¿Ñ€Ð¾Ð²ÐµÑ€Ð¸Ñ‚ÑŒ, Ð²ÑÐµ Ð»Ð¸ Ð¿Ð°Ñ€Ð°Ð¼ÐµÑ‚Ñ€Ñ‹ Ð½Ð° Ð¼ÐµÑÑ‚Ðµ
 if (!$ctrTour->check_params_enough())	{
 	$this->set_includeOption('template', 'tour_input_incorrect');
 	return false;
 }
 
 
-#ïðîâåñòè òóð
+#Ð¿Ñ€Ð¾Ð²ÐµÑÑ‚Ð¸ Ñ‚ÑƒÑ€
 $ctrTour->run();
 
 
-#âçÿòü ðåçóëüòàòû èç ctrTour, çàíåñòè â data
+#Ð²Ð·ÑÑ‚ÑŒ Ñ€ÐµÐ·ÑƒÐ»ÑŒÑ‚Ð°Ñ‚Ñ‹ Ð¸Ð· ctrTour, Ð·Ð°Ð½ÐµÑÑ‚Ð¸ Ð² data
 $this->data['tour_result'] = $ctrTour->get_results();
 
 
-#âçÿòü òåìïëåéò ðåçóëüòàòîâ
+#Ð²Ð·ÑÑ‚ÑŒ Ñ‚ÐµÐ¼Ð¿Ð»ÐµÐ¹Ñ‚ Ñ€ÐµÐ·ÑƒÐ»ÑŒÑ‚Ð°Ñ‚Ð¾Ð²
 $this->set_includeOption('template', 'tour_output');
 
 return true;

@@ -63,6 +63,7 @@ abstract class fsb_model	{
 
 		eval('$lnk = &'.$link.';');
 		if (is_array($lnk))	{
+throw new Exception('We are here');
 			foreach( $lnk as $fld => $val )
 				if (is_array($lnk[$fld]))	{
 					$f = is_array($field) ? $field : array($field);

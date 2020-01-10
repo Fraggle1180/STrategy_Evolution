@@ -53,7 +53,7 @@ class ctrTour	{
 		$mod_tour->set('noise_in',	$this->param['noise_in']);
 		$mod_tour->set('noise_out',	$this->param['noise_out']);
 
-		$mod_tour->Save();
+		$mod_tour->save();
 
 		$this->data['tour_id'] = $mod_tour->get('id');
 
@@ -74,7 +74,7 @@ class ctrTour	{
 			$this->players[$p]['model']->set('player_strategy', $db);
 			$this->players[$p]['model']->set('player_result', 0);
 
-			$this->players[$p]['model']->Save();
+			$this->players[$p]['model']->save();
 		}
 
 
@@ -91,7 +91,7 @@ class ctrTour	{
 		for( $p = 1; $p <= $this->players['max_num']; $p++ )	{
 			if (!array_key_exists($p, $this->players) or is_null($this->players[$p]))	continue;
 
-			$this->players[$p]['model']->Save();
+			$this->players[$p]['model']->save();
 		}
 
 
@@ -146,7 +146,7 @@ class ctrTour	{
 		$mod_game->set('player1_result', 0);
 		$mod_game->set('player2_result', 0);
 
-		$mod_game->Save();
+		$mod_game->save();
 
 		$d_game_id	= $mod_game->get('id');
 
@@ -160,8 +160,6 @@ class ctrTour	{
 		$profiler->Tick('ctrTour::game', $profiler_tick_param);
 
 		for ( $m = 1; $m <= $p_gamelen; $m++ )	{
-			$profiler->Tick('ctrTour::game_cycle', $profiler_tick_param);
-
 			$this->stats['moves']++;
 
 			$p1_decision = $pl_strategy1->MakeMove();
@@ -189,25 +187,29 @@ class ctrTour	{
 			$move->set('player2_perception', $p2_perception);
 
 			$profiler->Tick('ctrTour::game_cycle', $profiler_tick_param);
-			$move->Save();		# todo: BIG performance problem!!!
+			$move->save();		# todo: BIG performance problem!!!
 			$profiler->Tick('ctrTour::game_cycle', $profiler_tick_param);
 
 
-			$profiler->Tick('ctrTour::game_cycle', $profiler_tick_param);
 			$mod_payer1->set('player_result', $mod_payer1->get('player_result') + $p1_result);
-			$profiler->Tick('ctrTour::game_cycle', $profiler_tick_param);
-			$mod_payer1->Save();	# todo: performance problem!!!
-			$profiler->Tick('ctrTour::game_cycle', $profiler_tick_param);
-
-			$profiler->Tick('ctrTour::game_cycle', $profiler_tick_param);
 			$mod_payer2->set('player_result', $mod_payer2->get('player_result') + $p2_result);
-			$profiler->Tick('ctrTour::game_cycle', $profiler_tick_param);
-			$mod_payer2->Save();	# todo: performance problem!!!
-			$profiler->Tick('ctrTour::game_cycle', $profiler_tick_param);
+
+			$mod_game->set('player1_result', $mod_game->get('player1_result') + $p1_result);
+			$mod_game->set('player2_result', $mod_game->get('player2_result') + $p2_result);
 
 
 			$move_sequence[] = $move;
 			$profiler->Tick('ctrTour::game_cycle', $profiler_tick_param);
 		}
+
+
+		# сохранить результаты игроков (и в таблице игрока, и в таблице игры)
+		$profiler->Tick('ctrTour::game_cycle', $profiler_tick_param);
+		$mod_payer1->save();	# todo: performance problem!!!
+		$profiler->Tick('ctrTour::game_cycle', $profiler_tick_param);
+		$mod_payer2->save();	# todo: performance problem!!!
+		$profiler->Tick('ctrTour::game_cycle', $profiler_tick_param);
+		$mod_game->save();
+		$profiler->Tick('ctrTour::game_cycle', $profiler_tick_param);
 	}
 };

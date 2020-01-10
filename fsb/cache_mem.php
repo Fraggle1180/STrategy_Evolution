@@ -1,22 +1,12 @@
 <?
 class fsb_cache_mem	{
 	protected static $data;
-	protected $log;
-	protected $matches;
 
 	function __construct()	{
 		if (is_null(fsb_cache_mem::$data))	fsb_cache_mem::$data = array();
-		$this->matches = array( 'match' => 0, 'miss' => 0 );
-		$this->log = fsb_getLog();
 	}
 
 	function __destruct()	{
-		$ma = $this->matches['match'];
-		$mi = $this->matches['miss'];
-		$mt = $ma + $mi;
-		$mp = ($mt <> 0) ? round(100.0 * $ma / $mt, 2) : '-';
-
-		$this->log->write('cache_mem', "Matches: $ma of $mt ($mp%)");
 	}
 
 	protected function getKeySignature($key)	{
@@ -41,16 +31,13 @@ class fsb_cache_mem	{
 
 	function get($key, $allow_expired = false)	{
 		$key_s = $this->getKeySignature($key);
-		if (!array_key_exists($key_s, fsb_cache_mem::$data))	{	$this->matches['miss']++;	return NULL;	}
-#		if (!array_key_exists($key_s, fsb_cache_mem::$data))	return NULL;
+		if (!array_key_exists($key_s, fsb_cache_mem::$data))	return NULL;
 
 		$cache = fsb_cache_mem::$data[$key_s];
 		$time  = time();
 
-		if (($cache['expires'] < $time) and !$allow_expired)	{	$this->matches['miss']++;	return NULL;	}
-#		if (($cache['expires'] < $time) and !$allow_expired)	return NULL;
+		if (($cache['expires'] < $time) and !$allow_expired)	return NULL;
 
-		$this->matches['match']++;
 		return $cache['value'];
 	}
 
