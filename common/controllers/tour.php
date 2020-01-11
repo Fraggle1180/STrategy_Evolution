@@ -153,7 +153,7 @@ class ctrTour	{
 
 		# моделировать игру
 		# результат: в моделях игроков изменятся player_score в соотвествии с результатом этой игры
-		$move_sequence = array();
+		$move_sequence = new modMove;
 
 		$profiler = new fsb_profiler;
 		$profiler_tick_param = "($pl1 vs $pl2) s1: ".$player1['strategy'].", s2: ".$player2['strategy'].", m: $p_gamelen";
@@ -175,20 +175,8 @@ class ctrTour	{
 			$p2_perception = (rand(1, 100) > $p_noise_out) ? $p1_action : (1 - $p1_action);
 
 
-			$move = new modMove;
-
-			$move->set('id_game',		$d_game_id);
-			$move->set('number_move',	$m);
-			$move->set('player1_decision',	$p1_decision);
-			$move->set('player2_decision',	$p2_decision);
-			$move->set('player1_action',	$p1_action);
-			$move->set('player2_action',	$p2_action);
-			$move->set('player1_perception', $p1_perception);
-			$move->set('player2_perception', $p2_perception);
-
-			$profiler->Tick('ctrTour::game_cycle', $profiler_tick_param);
-			$move->save();		# todo: BIG performance problem!!!
-			$profiler->Tick('ctrTour::game_cycle', $profiler_tick_param);
+			$move_ind = $move_sequence->add();
+			$move_sequence->set_bulk( $move_ind, array( 'id_game' => $d_game_id, 'number_move' => $m, 'player1_decision' => $p1_decision, 'player2_decision' => $p2_decision, 'player1_action' => $p1_action, 'player2_action' => $p2_action, 'player1_perception' => $p1_perception, 'player2_perception' => $p2_perception) );
 
 
 			$mod_payer1->set('player_result', $mod_payer1->get('player_result') + $p1_result);
@@ -198,16 +186,19 @@ class ctrTour	{
 			$mod_game->set('player2_result', $mod_game->get('player2_result') + $p2_result);
 
 
-			$move_sequence[] = $move;
 			$profiler->Tick('ctrTour::game_cycle', $profiler_tick_param);
 		}
 
 
 		# сохранить результаты игроков (и в таблице игрока, и в таблице игры)
 		$profiler->Tick('ctrTour::game_cycle', $profiler_tick_param);
+		$move_sequence->save();	# todo: BIG performance problem!!!
+
+		$profiler->Tick('ctrTour::game_cycle', $profiler_tick_param);
 		$mod_payer1->save();	# todo: performance problem!!!
 		$profiler->Tick('ctrTour::game_cycle', $profiler_tick_param);
 		$mod_payer2->save();	# todo: performance problem!!!
+
 		$profiler->Tick('ctrTour::game_cycle', $profiler_tick_param);
 		$mod_game->save();
 		$profiler->Tick('ctrTour::game_cycle', $profiler_tick_param);

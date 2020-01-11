@@ -26,7 +26,17 @@ abstract class fsb_model_datarecord	{
 	}
 
 	function set($field, $value)	{
-		$this->setDirect($field, $value);
+		return $this->setDirect($field, $value);
+	}
+
+	function set_bulk($fields)	{
+		$return = true;
+
+		foreach( $fields as $field => $value )
+			if (!$this->set($field, $value))
+				$return = false;
+
+		return $return;
 	}
 
 	protected function setDirect($field, $value)	{
@@ -81,7 +91,7 @@ abstract class fsb_model_databaserecord	extends fsb_model_datarecord {
 		$get_id	= $this->get($p_key);
 
 		if ($get_id<>'NULL')	{
-			$IDs = $this->Find(array($p_key=>$get_id));
+			$IDs = $this->find(array($p_key=>$get_id));
 			if (!$IDs)	$get_id = 'NULL';
 		}
 		$bNewRecord = ($get_id=='NULL');
@@ -151,7 +161,7 @@ abstract class fsb_model_databaserecord	extends fsb_model_datarecord {
 		if (is_null($field))	$field = array();
 
 		$addr = implode("']['", $field);
-		if ($addr)	$addr = "['$addr']";
+		if ($addr <> '')	$addr = "['$addr']";
 
 		$l_db = "\$this->dbFields$addr";
 		$eval = "\$link = $l_db;";
@@ -193,19 +203,19 @@ abstract class fsb_model_dataset	{
 	protected $dataFields;
 
 	function __construct()	{
-		$this->Create();
-	}
-
-	function Create()	{
-		$this->dataFields = array();
+		$this->reset();
 	}
 
 	abstract function newRecord();
 
+	function reset()	{
+		$this->dataFields = array();
+	}
+
 	function get($num, $field)	{
 		if (!$this->key_exists($num))	return null;
 		if (!array_key_exists($field, $this->dataFields[$num]))	return null;
-		return $this->dataFields[$num];
+		return $this->dataFields[$num][$field];
 	}
 
 	function get_record($num)	{
@@ -225,10 +235,37 @@ abstract class fsb_model_dataset	{
 
 		if (!array_key_exists($field, $this->dataFields[$num]))	return false;
 		$this->dataFields[$num][$field] = $value;
+		return $this->setDirect($num, $field, $value);
+	}
+
+	function set_bulk($num, $fields, $allow_add = false)	{
+		if (!$this->key_exists($num))	{
+			if (!$allow_add)	return false;
+			$this->add($num);
+		}
+
+		$return = true;
+
+		foreach( $fields as $field => $value )
+			if (!$this->set($num, $field, $value, $allow_add))
+				$return = false;
+
+		return $return;
+	}
+
+	protected function setDirect($num, $field, $value)	{
+		if (!array_key_exists($field, $this->dataFields[$num]))	return false;
+		$this->dataFields[$num][$field] = $value;
 		return true;
 	}
 
-	function add($num, $allow_overwrite = false)	{
+	function add($num = null, $allow_overwrite = false)	{
+		if (is_null($num))	{
+			$this->dataFields[] = $this->newRecord();
+			return key(array_slice($this->dataFields, -1, 1, true));	//  array_key_last($this->dataFields);
+		}
+
+
 		if ($this->key_exists($num) and !$allow_overwrite)	return false;
 
 		$this->dataFields[$num] = $this->newRecord();
@@ -246,7 +283,7 @@ abstract class fsb_model_dataset	{
 
 
 ###############################################################################
-# DatabaseRecord: единичный экземпляр данных (одна запись), находящийся в базе данных
+# DatabaseRecord: набор данных (N записей), находящийся в базе данных
 # Функции:    load, save, find
 # Наследует от:   DataSet
 
@@ -259,21 +296,226 @@ abstract class fsb_model_databaseset	extends fsb_model_dataset {
 		parent::__construct();
 	}
 
-	abstract function load($key);
-	abstract function save();
-	abstract function find($cond);
+	abstract function getTableName();
+	abstract function getPrimaryKey();
+
+	function load($keys)	{
+		$this->empty();
+
+		$table = $this->getTableName();
+		$p_key = $this->getPrimaryKey();
+
+		foreach( $keys as $key )	{
+			$db_id = $this->db->escape($key);
+
+			$sql = "select * from $table where $p_key=$db_id";
+			if (!$this->db->execute($sql))		return false;
+			if (!($row = $this->db->read()))	return false;
+
+			$new_ind = $this->add();
+
+			foreach( $this->dataFields[$new_ind] as $field => $v )	{
+				$this->set($new_ind, $field, $row[$field]);
+			}
+		}
+
+		return true;
+	}
+
+	function save()	{
+$profiler = new fsb_profiler;
+$profiler->Tick('model::save');
+		$this->setDBFields();
+$profiler->Tick('model::save');
+
+		$table = $this->getTableName();
+		$p_key = $this->getPrimaryKey();
+		$return = true;
+
+
+$profiler->Tick('model::save');
+		# подготовить запросы insert и update
+		$sql_insert = array();
+		$sql_update = array();
+
+		foreach( $this->dbFields as $num => $r )	{
+			$get_id	= $this->get($num, $p_key);
+
+			if (!is_null($get_id) and ($get_id<>'NULL'))	{
+				$IDs = $this->find(array($p_key=>$get_id));
+				if (!$IDs)	$get_id = 'NULL';
+			}
+			$bNewRecord = (is_null($get_id) or ($get_id == 'NULL'));
+
+
+			if ($bNewRecord)	{
+				# новая запись (даже если p_key определен, но не найден в базе - это новая запись)
+				$s_fields = array();
+				$s_values = array();
+				foreach( $this->dbFields[$num] as $field => $value )
+					if ($field <> $p_key)	{
+						$s_fields[] = $field;
+						$s_values[] = $value;
+					}
+
+				if (!count($sql_insert))	$sql_insert[] = "(".implode(', ', $s_fields).")";
+				$sql_insert[] = "(".implode(', ', $s_values).")";
+				$sql_insert[] = $num;
+			}	else	{
+				# запись существует в базе
+				$s_update = array();
+				foreach( $this->dbFields[$num] as $field => $value )
+					$s_update[] = "$field = $value";
+
+				$sql = "update $table set ".implode(', ', $s_update)." where $p_key=$get_id";
+				$sql_update[] = $sql;
+			}
+		}
+
+
+$profiler->Tick('model::save');
+		# исполнить запросы insert и update
+#		$this->db->execute("BEGIN;");
+
+$profiler->Tick('model::save');
+		# вставки новых записей
+		$max_packet = 10485760;  # TODO: get it from   SHOW VARIABLES LIKE 'max_allowed_packet';
+
+		$ins_num = count($sql_insert);
+		if ($ins_num>0)	{
+			$sql_i1 = "insert into $table ".$sql_insert[0]." values ";
+			$sql_statements = array();
+
+			for( $n = 1, $l = ($ins_num-1)/2, $sql = $sql_i1, $valnum = 0;  $n < $ins_num;  $n += 2, $l-- )	{
+$profiler->Tick('model::save');
+				$values = $sql_insert[$n];
+				$recnum = $sql_insert[$n+1];
+
+				$sql = $sql_i1.$values;
+$profiler->Tick('model::save');
+				if (!$this->db->execute($sql))	$return = false;
+$profiler->Tick('model::save');
+				$this->set($recnum, $p_key, $get_id = $this->db->get_insert_id());
+$profiler->Tick('model::save');
+/*
+				$bExceed = strlen($sql.$values) >= $max_packet;
+				$bLast   = ($l == 1);
+
+
+				if ($bExceed)	{
+					if ($valnum == 0)	{
+						# добавить - исполнить - обнулить
+						$act_DoReset = 'after';
+					}	else	{
+						# исполнить - обнулить - добавить
+						$act_DoReset = 'before';
+					}
+				}	else	{
+					if ($bLast)	{
+						# добавить - исполнить - обнулить
+						$act_DoReset = 'after';
+					}	else	{
+						# добавить
+						$act_DoReset = 'no';
+					}
+				}
+/* */
+
+			}
+		}		
+/* */
+
+$profiler->Tick('model::save');
+		# обновление существующих записей
+		foreach( $sql_update as $sql )	$this->db->execute($sql);
+
+#		$this->db->execute("COMMIT;");
+
+$profiler->Tick('model::save');
+		return $return;
+	}
+
+	function save_old()	{
+		$this->setDBFields();
+
+		$table = $this->getTableName();
+		$p_key = $this->getPrimaryKey();
+		$return = true;
+
+		foreach( $this->dbFields as $num => $r )	{
+			$get_id	= $this->get($num, $p_key);
+
+			if ($get_id<>'NULL')	{
+				$IDs = $this->find(array($p_key=>$get_id));
+				if (!$IDs)	$get_id = 'NULL';
+			}
+			$bNewRecord = ($get_id=='NULL');
+
+
+			if ($bNewRecord)	{
+				# новая запись (даже если p_key определен, но не найден в базе - это новая запись)
+				$s_fields = array();
+				$s_values = array();
+				foreach( $this->dbFields[$num] as $field => $value )
+					if ($field <> $p_key)	{
+						$s_fields[] = $field;
+						$s_values[] = $value;
+					}
+
+				$sql = "insert into $table (".implode(', ', $s_fields).") values (".implode(', ', $s_values).")";
+				if (!$this->db->execute($sql))	$return = false;
+				$this->set($num, $p_key, $get_id = $this->db->get_insert_id());
+			}	else	{
+				# запись существует в базе
+				$s_update = array();
+				foreach( $this->dbFields[$num] as $field => $value )
+					$s_update[] = "$field = $value";
+
+				$sql = "update $table set ".implode(', ', $s_update)." where $p_key=$get_id";
+				if (!$this->db->execute($sql))	$return = false;
+			}
+		}
+
+		return $return;
+	}
+
+	function find($cond)	{
+		if (!is_array($cond))	return null;
+
+		$table = $this->getTableName();
+		$p_key = $this->getPrimaryKey();
+
+		$swc = array();
+		foreach( $cond as $key => $val )
+			$swc[] = $this->find_ConvertCondition($key, $val);
+
+		$sql = "select distinct t.$p_key from $table t";
+		if ($swc)	$sql = $sql . ' where ' . implode(' and ', $swc);
+
+
+		if (!$this->db->execute($sql))		return null;
+
+		for( $found = array(); $res = $this->db->read(); )	{
+			$found[] = $res[$p_key];
+		}
+
+		return $found;
+	}
+
+	protected function find_ConvertCondition($key, $val)	{
+		return "t.$key=".$this->db->escape($val);
+	}
 
 	protected function setDBFields()	{
 		$this->dbFields = $this->get_all_records();
 
-		$this->escapeDBField($this->dbFields);
+		$this->escapeDBField();
 	}
 
 	private function escapeDBField($field = null)	{
 		if (is_null($field))	$field = array();
-
 		$addr = implode("']['", $field);
-		if ($addr)	$addr = "['$addr']";
+		if ($addr <> '')	$addr = "['$addr']";
 
 		$l_db = "\$this->dbFields$addr";
 		$eval = "\$link = $l_db;";
