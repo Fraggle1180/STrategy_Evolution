@@ -1,6 +1,7 @@
 <?
 include_once('guid.php');
 include_once('settings.php');
+include_once('list.php');
 include_once('log.php');
 include_once('cache_mem.php');
 include_once('db.php');
