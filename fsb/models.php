@@ -379,51 +379,45 @@ $profiler->Tick('model::save');
 
 $profiler->Tick('model::save');
 		# вставки новых записей
-		$max_packet = 10485760;  # TODO: get it from   SHOW VARIABLES LIKE 'max_allowed_packet';
-
 		$ins_num = count($sql_insert);
 		if ($ins_num>0)	{
+			$max_packet = 10485760;  # TODO: get it from   SHOW VARIABLES LIKE 'max_allowed_packet';
 			$sql_i1 = "insert into $table ".$sql_insert[0]." values ";
-			$sql_statements = array();
 
-			for( $n = 1, $l = ($ins_num-1)/2, $sql = $sql_i1, $valnum = 0;  $n < $ins_num;  $n += 2, $l-- )	{
-$profiler->Tick('model::save');
+			$sql_statements  = new fsb_list_limited($sql_i1, ', ');
+			$recnum_list     = array(array());
+			$recnum_list_ind = 0;
+
+
+			for( $n = 1;  $n < $ins_num;  $n += 2 )	{
 				$values = $sql_insert[$n];
 				$recnum = $sql_insert[$n+1];
 
-				$sql = $sql_i1.$values;
-$profiler->Tick('model::save');
-				if (!$this->db->execute($sql))	$return = false;
-$profiler->Tick('model::save');
-				$this->set($recnum, $p_key, $get_id = $this->db->get_insert_id());
-$profiler->Tick('model::save');
-/*
-				$bExceed = strlen($sql.$values) >= $max_packet;
-				$bLast   = ($l == 1);
-
-
-				if ($bExceed)	{
-					if ($valnum == 0)	{
-						# добавить - исполнить - обнулить
-						$act_DoReset = 'after';
-					}	else	{
-						# исполнить - обнулить - добавить
-						$act_DoReset = 'before';
-					}
-				}	else	{
-					if ($bLast)	{
-						# добавить - исполнить - обнулить
-						$act_DoReset = 'after';
-					}	else	{
-						# добавить
-						$act_DoReset = 'no';
-					}
+				$add = $sql_statements->add($values);
+				switch ($add)	{
+					case -1: $recnum_list[$recnum_list_ind++][] = $recnum; break; # добавлен - сдвиг
+					case -2: $recnum_list[++$recnum_list_ind][] = $recnum; break; # сдвиг - добавлен
+					default: $recnum_list[$recnum_list_ind][] = $recnum;   break; # добавлен
 				}
-/* */
-
 			}
-		}		
-/* */
+
+
+			$recnum_list_ind = 0;
+			foreach( $sql_statements as $sql )	{
+				if ($this->db->execute($sql))	{
+					$get_id = $this->db->get_insert_id();
+					$cur_id = $get_id;
+
+					foreach( $recnum_list[$recnum_list_ind] as $recnum )	{
+						$this->set($recnum, $p_key, $cur_id);
+						$cur_id++;
+					}
+				}	else	$return = false;
+
+				$recnum_list_ind++;
+			}
+		}
+
 
 $profiler->Tick('model::save');
 		# обновление существующих записей
@@ -432,50 +426,6 @@ $profiler->Tick('model::save');
 #		$this->db->execute("COMMIT;");
 
 $profiler->Tick('model::save');
-		return $return;
-	}
-
-	function save_old()	{
-		$this->setDBFields();
-
-		$table = $this->getTableName();
-		$p_key = $this->getPrimaryKey();
-		$return = true;
-
-		foreach( $this->dbFields as $num => $r )	{
-			$get_id	= $this->get($num, $p_key);
-
-			if ($get_id<>'NULL')	{
-				$IDs = $this->find(array($p_key=>$get_id));
-				if (!$IDs)	$get_id = 'NULL';
-			}
-			$bNewRecord = ($get_id=='NULL');
-
-
-			if ($bNewRecord)	{
-				# новая запись (даже если p_key определен, но не найден в базе - это новая запись)
-				$s_fields = array();
-				$s_values = array();
-				foreach( $this->dbFields[$num] as $field => $value )
-					if ($field <> $p_key)	{
-						$s_fields[] = $field;
-						$s_values[] = $value;
-					}
-
-				$sql = "insert into $table (".implode(', ', $s_fields).") values (".implode(', ', $s_values).")";
-				if (!$this->db->execute($sql))	$return = false;
-				$this->set($num, $p_key, $get_id = $this->db->get_insert_id());
-			}	else	{
-				# запись существует в базе
-				$s_update = array();
-				foreach( $this->dbFields[$num] as $field => $value )
-					$s_update[] = "$field = $value";
-
-				$sql = "update $table set ".implode(', ', $s_update)." where $p_key=$get_id";
-				if (!$this->db->execute($sql))	$return = false;
-			}
-		}
-
 		return $return;
 	}
 

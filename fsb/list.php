@@ -90,16 +90,16 @@ class fsb_list_limited extends fsb_list	{
 		$return  = 1;
 
 		if ($bExceed)	{
-			$return = -1;
-
 			if ($this->isFirst)	{
 				# добавить - новый
 				$this->add_to($addWhat);
 				$this->shift();
+				$return = -1;
 			}	else	{
 				# новый - добавить
 				$this->shift();
-				$this->add_to($addWhat);
+				$this->add_to($this->addWhat($text));	# после shift() мог поменяться addWhat() - пропасть разделитель в начале; поэтому нужен повторный вызов
+				$return = -2;
 			}
 		}	else	{
 			# добавить
@@ -108,5 +108,10 @@ class fsb_list_limited extends fsb_list	{
 
 
 		return $return;
+	}
+
+	protected function add_to($text)	{
+		parent::add_to($text);
+		$this->current_len += strlen($text);
 	}
 }

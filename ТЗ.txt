@@ -52,7 +52,7 @@
 
 Улучшить производительность
 +  Профилировать
-  Отследить узкие места
++  Отследить узкие места
   Исправить производительность
 
 
@@ -65,3 +65,11 @@
 +Положить в git
 +  Весь проект
 +  Фреймфорк FSB
+
+
+Баги
+  Проверить корректность Копирующий с прощением
+  Откуда идут странные запросы:
+    select distinct t.id from d_tournament t where t.id=
+    select distinct t.id from d_player_in_tournament t where t.id=
+    select distinct t.id from d_game t where t.id=
