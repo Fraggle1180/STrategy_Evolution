@@ -323,17 +323,13 @@ abstract class fsb_model_databaseset	extends fsb_model_dataset {
 	}
 
 	function save()	{
-$profiler = new fsb_profiler;
-$profiler->Tick('model::save');
 		$this->setDBFields();
-$profiler->Tick('model::save');
 
 		$table = $this->getTableName();
 		$p_key = $this->getPrimaryKey();
 		$return = true;
 
 
-$profiler->Tick('model::save');
 		# подготовить запросы insert и update
 		$sql_insert = array();
 		$sql_update = array();
@@ -373,11 +369,8 @@ $profiler->Tick('model::save');
 		}
 
 
-$profiler->Tick('model::save');
 		# исполнить запросы insert и update
-#		$this->db->execute("BEGIN;");
 
-$profiler->Tick('model::save');
 		# вставки новых записей
 		$ins_num = count($sql_insert);
 		if ($ins_num>0)	{
@@ -418,14 +411,10 @@ $profiler->Tick('model::save');
 			}
 		}
 
-
-$profiler->Tick('model::save');
 		# обновление существующих записей
 		foreach( $sql_update as $sql )	$this->db->execute($sql);
 
-#		$this->db->execute("COMMIT;");
 
-$profiler->Tick('model::save');
 		return $return;
 	}
 

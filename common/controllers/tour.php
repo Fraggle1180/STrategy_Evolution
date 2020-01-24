@@ -10,12 +10,12 @@ class ctrTour	{
 	protected $players;
 	protected $data;
 	protected $stats;
+	protected $models;
 
 	function __construct()	{
 		$this->param	= array( 'price1' => null, 'price2' => null, 'result1' => null, 'result2' => null, 'noise_in' => null, 'noise_out' => null, 'gamelen' => null );
 		$this->players	= array( 'max_num' => 0 );
 		$this->data	= array( );
-		$this->stats	= array( 'time' => null, 'players' => 0, 'games' => 0, 'moves' => 0 );
 	}
 
 	function set_param($param, $value)	{
@@ -40,54 +40,68 @@ class ctrTour	{
 		return true;
 	}
 
-	function run()	{
-		$this->stats['time'] = time();
+	protected function run_init()	{
+		# общие данные
+		$this->stats	= array( 'time' => time(), 'players' => 0, 'games' => 0, 'moves' => 0 );
+		$this->models	= array( 'tour' => new modTour(), 'players' => new modPlayerInTournament(), 'games' => new modGame(), 'moves' => new modMove() );
 
-		$mod_tour = new modTour();
 
-		$mod_tour->set('game_length',	$this->param['gamelen']);
-		$mod_tour->set('price1',	$this->param['price1']);
-		$mod_tour->set('price2',	$this->param['price2']);
-		$mod_tour->set('result1',	$this->param['result1']);
-		$mod_tour->set('result2',	$this->param['result2']);
-		$mod_tour->set('noise_in',	$this->param['noise_in']);
-		$mod_tour->set('noise_out',	$this->param['noise_out']);
-
+		# параметры тура
+		$mod_tour = & $this->models['tour'];
+		$mod_tour->set_bulk(array('game_length' => $this->param['gamelen'], 'price1' => $this->param['price1'], 'price2' => $this->param['price2'],
+						'result1' => $this->param['result1'], 'result2' => $this->param['result2'],
+						'noise_in' => $this->param['noise_in'], 'noise_out' => $this->param['noise_out']));
 		$mod_tour->save();
 
 		$this->data['tour_id'] = $mod_tour->get('id');
 
 
+		# параметры игроков
+		$mod_players = & $this->models['players'];
 		for( $p = 1; $p <= $this->players['max_num']; $p++ )	{
 			if (!array_key_exists($p, $this->players) or is_null($this->players[$p]))	continue;
 
 			$this->stats['players']++;
 
-			$this->players[$p]['model'] = new modPlayerInTournament;
+
+			$index = $mod_players->add();
+			$this->players[$p]['index'] = $index;
 
 			$st = $this->players[$p]['strategy'];
 			$pr = $this->players[$p]['params'];
 			$db = $st . ((is_null($pr) or !$pr) ? '' : " ($pr)");
 
-			$this->players[$p]['model']->set('id_tournament', $this->data['tour_id']);
-			$this->players[$p]['model']->set('player_number', $p);
-			$this->players[$p]['model']->set('player_strategy', $db);
-			$this->players[$p]['model']->set('player_result', 0);
-
-			$this->players[$p]['model']->save();
+			$mod_players->set_bulk($index, array( 'id_tournament' => $this->data['tour_id'], 'player_number' => $p, 'player_strategy' => $db, 'player_result' => 0 ));
 		}
 
+		$mod_players->save();
 
+		$mod_tour->set('p_players', $this->stats['players']);
+
+
+		# параметры игр
+		$mod_games = & $this->models['games'];
 		for( $p1 = 1; $p1 <= $this->players['max_num']; $p1++ )	{
 			if (!array_key_exists($p1, $this->players) or is_null($this->players[$p1]))	continue;
 
 			for( $p2 = 1; $p2 <= $this->players['max_num']; $p2++ )	{
 				if (!array_key_exists($p2, $this->players) or is_null($this->players[$p2]))	continue;
 
-				$this->run_game($p1, $p2);
+				$index = $mod_games->add();
+				$mod_games->set($index, 'id_tournament', $this->data['tour_id']);
 			}
 		}
 
+		$mod_games->save();
+	}
+
+	protected function run_play()	{
+		$games_num = $this->models['games']->count();
+		for( $g = 0; $g <= $games_num; $g++ )
+			$this->run_game($g);
+	}
+
+	protected function run_done()	{
 		for( $p = 1; $p <= $this->players['max_num']; $p++ )	{
 			if (!array_key_exists($p, $this->players) or is_null($this->players[$p]))	continue;
 
@@ -98,12 +112,18 @@ class ctrTour	{
 		$this->stats['time'] = time() - $this->stats['time'];
 	}
 
+	function run()	{
+		$this->run_init();
+		$this->run_play();
+		$this->run_done();
+	}
+
 	function get_results()	{
 		return array( 'rating' => modPlayerInTournament::getRating($this->data['tour_id']), 'stats' => $this->stats );
 	}
 
 
-	protected function run_game($pl1, $pl2)	{
+	protected function run_game($game_ind)	{
 		set_time_limit(300);
 
 		$this->stats['games']++;

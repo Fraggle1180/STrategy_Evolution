@@ -1,10 +1,10 @@
 <?
 include_once('fsb/models.php');
 
-class modPlayerInTournament extends fsb_model_databaserecord {
+class modPlayerInTournament extends fsb_model_databaseset {
 
-	function FillDataFields()	{
-		$this->dataFields = array( 'id' => null, 'id_tournament' => null, 'player_number' => null, 'player_strategy' => null, 'player_result' => null );
+	function newRecord()	{
+		return array( 'id' => null, 'id_tournament' => null, 'player_number' => null, 'player_strategy' => null, 'player_result' => null );
 	}
 
 	function getTableName()	{
