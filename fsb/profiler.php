@@ -16,7 +16,7 @@ class fsb_profiler	{
 		}
 	}
 
-	function Tick($section='common', $linesuffix='')	{
+	function Tick($section='common', $linesuffix='', $useDuration=true)	{
 		$sc = (is_array($section)) ? md5(print_r($section, 1)) : $section;
 
 		if (isset($this->data[$sc]))	{
@@ -29,7 +29,7 @@ class fsb_profiler	{
 			$c = microtime(true);
 			$d = $c - $this->data[$sc]['last'];
 
-			$this->data[$sc]['data'][] = array('s'=>$s, 'l'=>$l, 'c'=>$c, 'd'=>$d);
+			$this->data[$sc]['data'][] = array('s'=>$s, 'l'=>$l, 'c'=>$c, 'd'=>($useDuration ? $d : 0));
 			$this->data[$sc]['last'] = $c;
 		}	else	{
 			$this->data[$sc]['last'] = microtime(true);

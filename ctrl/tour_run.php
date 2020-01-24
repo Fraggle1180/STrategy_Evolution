@@ -1,4 +1,55 @@
 <?
+/* /
+$db = new fsb_dbconnection;
+$db->open();
+
+$val1 = "(1, 1, 'step-by-step', 1)";
+$val2 = "(1, 1, 'bunch', 1)";
+$sql  = "insert into d_player_in_tournament (id_tournament, player_number, player_strategy, player_result) values ";
+$tot  = 45;
+
+$list = new fsb_list_limited($sql,   ', ');
+$list->set_limit(10485760);
+
+
+$t1 = microtime(true);
+
+
+?><hr><b>Step-by=step</b><br><br><?
+for( $n = $tot; $n--; )	{
+	$db->execute($sql.$val1);
+	$id = $db->get_insert_id();
+	print("id: $id<br>\n");
+}
+
+
+$t2 = microtime(true);
+
+
+?><hr><b>Bunch</b><br><br><?
+for( $n = $tot, $bunch = $sql; $n--; )
+	$list->add($val2);
+
+foreach( $list as $key => $statement )	{
+	$db->execute($statement);
+	print("bunch #$key<br>\n");
+	$id = $db->get_insert_id();
+	print("id: $id<br>\n");
+}
+
+
+$t3 = microtime(true);
+
+
+print("t1 = $t1, t2 = $t2, t3 = $t3<br>\n");
+print("step-by-step time: ".($t2-$t1)." sec<br>\n");
+print("bunch time: ".($t3-$t2)." sec<br>\n");
+
+
+return;
+####################
+/* */
+
 include_once('common/models/tour.php');
 include_once('common/controllers/tour.php');
 
