@@ -6,11 +6,11 @@ class ctrStrategy_copycat_rebalance extends ctrStrategy_copycat {
 	protected $rebalance_moves_number;
 
 	protected function MakeDecision()	{
-		if ($this->current_move < $this->rebalance_moves_number)	return parent::MakeDecision();
+		if ($this->current_move <= $this->rebalance_moves_number)	return parent::MakeDecision();
 
 
 		# проверить возникновение синусоиды
-		for( $moves = array(), $n = 1;	$n <= $this->rebalance_moves_number; $n++ )	{
+		for( $moves = array(), $n = 1;	$n < $this->rebalance_moves_number; $n++ )	{
 			$my_move	= $this->getMyMove($n);
 			$other_move	= $this->getOtherSideMove($n);
 

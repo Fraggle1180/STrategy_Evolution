@@ -16,6 +16,8 @@ class ctrTour	{
 		$this->param	= array( 'price1' => null, 'price2' => null, 'result1' => null, 'result2' => null, 'noise_in' => null, 'noise_out' => null, 'gamelen' => null );
 		$this->players	= array( 'max_num' => 0 );
 		$this->data	= array( );
+		$this->profiler = new fsb_profiler;
+		$this->profiler->Tick('ctrTour::game_run');
 	}
 
 	function set_param($param, $value)	{
@@ -41,12 +43,12 @@ class ctrTour	{
 	}
 
 	protected function run_init()	{
-		# общие данные
-		$this->stats	= array( 'time' => time(), 'players' => 0, 'games' => 0, 'moves' => 0 );
+		# РѕР±С‰РёРµ РґР°РЅРЅС‹Рµ
+		$this->stats	= array( 'time' => microtime(true), 'players' => 0, 'games' => 0, 'moves' => 0 );
 		$this->models	= array( 'tour' => new modTour(), 'players' => new modPlayerInTournament(), 'games' => new modGame(), 'moves' => new modMove() );
 
 
-		# параметры тура
+		# РїР°СЂР°РјРµС‚СЂС‹ С‚СѓСЂР°
 		$mod_tour = & $this->models['tour'];
 		$mod_tour->set_bulk(array('game_length' => $this->param['gamelen'], 'price1' => $this->param['price1'], 'price2' => $this->param['price2'],
 						'result1' => $this->param['result1'], 'result2' => $this->param['result2'],
@@ -56,7 +58,7 @@ class ctrTour	{
 		$this->data['tour_id'] = $mod_tour->get('id');
 
 
-		# параметры игроков
+		# РїР°СЂР°РјРµС‚СЂС‹ РёРіСЂРѕРєРѕРІ
 		$mod_players = & $this->models['players'];
 		for( $p = 1; $p <= $this->players['max_num']; $p++ )	{
 			if (!array_key_exists($p, $this->players) or is_null($this->players[$p]))	continue;
@@ -79,7 +81,7 @@ class ctrTour	{
 		$mod_tour->set('p_players', $this->stats['players']);
 
 
-		# параметры игр
+		# РїР°СЂР°РјРµС‚СЂС‹ РёРіСЂ
 		$mod_games = & $this->models['games'];
 		for( $p1 = 1; $p1 <= $this->players['max_num']; $p1++ )	{
 			if (!array_key_exists($p1, $this->players) or is_null($this->players[$p1]))	continue;
@@ -88,7 +90,7 @@ class ctrTour	{
 				if (!array_key_exists($p2, $this->players) or is_null($this->players[$p2]))	continue;
 
 				$index = $mod_games->add();
-				$mod_games->set($index, 'id_tournament', $this->data['tour_id']);
+				$mod_games->set_bulk($index, array( 'id_tournament' => $this->data['tour_id'], 'player1_number' => $p1, 'player2_number' => $p2 ));
 			}
 		}
 
@@ -97,19 +99,17 @@ class ctrTour	{
 
 	protected function run_play()	{
 		$games_num = $this->models['games']->count();
-		for( $g = 0; $g <= $games_num; $g++ )
+		for( $g = 0; $g < $games_num; $g++ )
 			$this->run_game($g);
 	}
 
 	protected function run_done()	{
-		for( $p = 1; $p <= $this->players['max_num']; $p++ )	{
-			if (!array_key_exists($p, $this->players) or is_null($this->players[$p]))	continue;
-
-			$this->players[$p]['model']->save();
-		}
+		$this->models['players']->save();
+		$this->models['games']->save();
+		$this->models['moves']->save();
 
 
-		$this->stats['time'] = time() - $this->stats['time'];
+		$this->stats['time'] = microtime(true) - $this->stats['time'];
 	}
 
 	function run()	{
@@ -124,12 +124,20 @@ class ctrTour	{
 
 
 	protected function run_game($game_ind)	{
+		$this->profiler->Tick('ctrTour::game_run', '', 0);
 		set_time_limit(300);
 
 		$this->stats['games']++;
 
 
-		# параметры очередной игры
+		# РјРѕРґРµР»СЊ РґР°РЅРЅС‹С… РёРіСЂС‹
+		$mod_games = & $this->models['games'];
+		$pl1 = $mod_games->get($game_ind, 'player1_number');
+		$pl2 = $mod_games->get($game_ind, 'player2_number');
+		$d_game_id = $mod_games->get($game_ind, 'id');
+
+
+		# РїР°СЂР°РјРµС‚СЂС‹ РѕС‡РµСЂРµРґРЅРѕР№ РёРіСЂС‹
 		$p_price1	= $this->param['price1'];
 		$p_price2	= $this->param['price2'];
 		$p_result1	= $this->param['result1'];
@@ -140,50 +148,33 @@ class ctrTour	{
 		$d_tour_id	= $this->data['tour_id'];
 
 
-		# две стороны игры
+		# РґРІРµ СЃС‚РѕСЂРѕРЅС‹ РёРіСЂС‹
+		$move_sequence	= new modMove();
+		$mod_players	= & $this->models['players'];
+
 		$player1	= $this->players[$pl1];
 		$str_class1	= ctrStrategy::getClass_byName($player1['strategy']);
 		$pl_strategy1	= new $str_class1($move_sequence, 1);
 		$pl_strategy1->setParam($player1['params']);
-		$mod_payer1	= &$this->players[$pl1]['model'];
 
 		$player2	= $this->players[$pl2];
 		$str_class2	= ctrStrategy::getClass_byName($player2['strategy']);
 		$pl_strategy2	= new $str_class2($move_sequence, 2);
 		$pl_strategy1->setParam($player1['params']);
-		$mod_payer2	= &$this->players[$pl2]['model'];
 
 
-		# модель данных игры
-		$mod_game = new modGame();
-
-		$mod_game->set('id_tournament',	$d_tour_id);
-		$mod_game->set('start_at',	time());
-		$mod_game->set('player1_number', $pl1);
-		$mod_game->set('player2_number', $pl2);
-		$mod_game->set('player1_strategy',	$mod_payer1->get('player_strategy'));
-		$mod_game->set('player2_strategy',	$mod_payer2->get('player_strategy'));
-		$mod_game->set('player1_result', 0);
-		$mod_game->set('player2_result', 0);
-
-		$mod_game->save();
-
-		$d_game_id	= $mod_game->get('id');
-
-
-		# моделировать игру
-		# результат: в моделях игроков изменятся player_score в соотвествии с результатом этой игры
-		$move_sequence = new modMove;
-
-		$profiler = new fsb_profiler;
-		$profiler_tick_param = "($pl1 vs $pl2) s1: ".$player1['strategy'].", s2: ".$player2['strategy'].", m: $p_gamelen";
-		$profiler->Tick('ctrTour::game', $profiler_tick_param);
+		# РјРѕРґРµР»РёСЂРѕРІР°С‚СЊ РёРіСЂСѓ
+		# СЂРµР·СѓР»СЊС‚Р°С‚:
+		#   1) РІ РјРѕРґРµР»СЏС… РёРіСЂРѕРєРѕРІ РёР·РјРµРЅСЏС‚СЃСЏ player_score РІ СЃРѕРѕС‚РІРµСЃС‚РІРёРё СЃ СЂРµР·СѓР»СЊС‚Р°С‚РѕРј СЌС‚РѕР№ РёРіСЂС‹
+		#   2) РґРѕР±Р°РІСЏС‚СЃСЏ С…РѕРґС‹
 
 		for ( $m = 1; $m <= $p_gamelen; $m++ )	{
+		$this->profiler->Tick('ctrTour::game_run', '', 0);
 			$this->stats['moves']++;
 
 			$p1_decision = $pl_strategy1->MakeMove();
 			$p2_decision = $pl_strategy2->MakeMove();
+		$this->profiler->Tick('ctrTour::game_run');
 
 			$p1_action   = (rand(1, 100) > $p_noise_in) ? $p1_decision : (1 - $p1_decision);
 			$p2_action   = (rand(1, 100) > $p_noise_in) ? $p2_decision : (1 - $p2_decision);
@@ -193,34 +184,29 @@ class ctrTour	{
 
 			$p1_perception = (rand(1, 100) > $p_noise_out) ? $p2_action : (1 - $p2_action);
 			$p2_perception = (rand(1, 100) > $p_noise_out) ? $p1_action : (1 - $p1_action);
+		$this->profiler->Tick('ctrTour::game_run');
 
 
-			$move_ind = $move_sequence->add();
-			$move_sequence->set_bulk( $move_ind, array( 'id_game' => $d_game_id, 'number_move' => $m, 'player1_decision' => $p1_decision, 'player2_decision' => $p2_decision, 'player1_action' => $p1_action, 'player2_action' => $p2_action, 'player1_perception' => $p1_perception, 'player2_perception' => $p2_perception) );
+			$move_sequence->append(array( 'id_game' => $d_game_id, 'number_move' => $m, 'player1_decision' => $p1_decision, 'player2_decision' => $p2_decision, 'player1_action' => $p1_action, 'player2_action' => $p2_action, 'player1_perception' => $p1_perception, 'player2_perception' => $p2_perception));
+		$this->profiler->Tick('ctrTour::game_run');
 
 
-			$mod_payer1->set('player_result', $mod_payer1->get('player_result') + $p1_result);
-			$mod_payer2->set('player_result', $mod_payer2->get('player_result') + $p2_result);
+			$mod_players->set(($pl1-1), 'player_result', $mod_players->get(($pl1-1), 'player_result') + $p1_result);
+			$mod_players->set(($pl2-1), 'player_result', $mod_players->get(($pl2-1), 'player_result') + $p2_result);
+		$this->profiler->Tick('ctrTour::game_run');
 
-			$mod_game->set('player1_result', $mod_game->get('player1_result') + $p1_result);
-			$mod_game->set('player2_result', $mod_game->get('player2_result') + $p2_result);
-
-
-			$profiler->Tick('ctrTour::game_cycle', $profiler_tick_param);
+			$mod_games->set($game_ind, 'player1_result', $mod_games->get($game_ind, 'player1_result') + $p1_result);
+			$mod_games->set($game_ind, 'player2_result', $mod_games->get($game_ind, 'player2_result') + $p2_result);
+		$this->profiler->Tick('ctrTour::game_run');
 		}
 
 
-		# сохранить результаты игроков (и в таблице игрока, и в таблице игры)
-		$profiler->Tick('ctrTour::game_cycle', $profiler_tick_param);
-		$move_sequence->save();	# todo: BIG performance problem!!!
+		$this->profiler->Tick('ctrTour::game_run');
+		# СЃРѕС…СЂР°РЅРёС‚СЊ С…РѕРґС‹ РІ РѕР±С‰РёР№ РґР°С‚Р°СЃРµС‚
+		$mod_moves	= & $this->models['moves'];
+		$move_num	= $move_sequence->count();
 
-		$profiler->Tick('ctrTour::game_cycle', $profiler_tick_param);
-		$mod_payer1->save();	# todo: performance problem!!!
-		$profiler->Tick('ctrTour::game_cycle', $profiler_tick_param);
-		$mod_payer2->save();	# todo: performance problem!!!
-
-		$profiler->Tick('ctrTour::game_cycle', $profiler_tick_param);
-		$mod_game->save();
-		$profiler->Tick('ctrTour::game_cycle', $profiler_tick_param);
+		$mod_moves->tail($move_sequence);
+		$this->profiler->Tick('ctrTour::game_run');
 	}
 };

@@ -7,8 +7,8 @@ class ctrStrategy_copycat_forgiving extends ctrStrategy_copycat {
 
 	protected function MakeDecision()	{
 		for( $best_move = null, $n = 1;	$n <= $this->remember_moves_number; $n++ )	{
-			$move = $this->getOtherSideMove($n);
-			if (is_null($move))	continue;
+			try { $move = $this->getOtherSideMove($n); }
+			catch (Exception $e) { continue; }
 
 			$best_move = (is_null($best_move)) ? $move : max($best_move, $move);
 		}

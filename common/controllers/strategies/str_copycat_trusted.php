@@ -10,7 +10,7 @@ class ctrStrategy_copycat_trusted extends ctrStrategy_copycat_rebalance {
 	protected function MakeDecision()	{
 		if ($this->current_move == 1)	$this->wasTrustEstablished = false;
 
-		if ($this->current_move < $this->trust_period)	return ctrStrategy_copycat::MakeDecision();
+		if ($this->current_move <= $this->trust_period)	return ctrStrategy_copycat::MakeDecision();
 
 		# проверить, возникло ли доверие
 		if (!$this->wasTrustEstablished)	{

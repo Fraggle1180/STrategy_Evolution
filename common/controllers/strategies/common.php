@@ -73,8 +73,8 @@ abstract class ctrStrategy	{
 
 	protected function getOtherSideMove($ago)	{
 		$move_number = $this->current_move-$ago;
-		if (!array_key_exists($move_number-1, $this->move_sequence))	return null;
-		return $this->move_sequence[$move_number-1]->get('player'.$this->player_side.'_perception');
+		if (!$this->move_sequence->rec_exists($move_number-1))	throw new Exception("Move history unreacheable");
+		return $this->move_sequence->get($move_number-1, 'player'.$this->player_side.'_perception');
 	}
 
 	protected function getMyLastMove()	{
@@ -83,7 +83,7 @@ abstract class ctrStrategy	{
 
 	protected function getMyMove($ago)	{
 		$move_number = $this->current_move-$ago;
-		if (!array_key_exists($move_number-1, $this->move_sequence))	return null;
-		return $this->move_sequence[$move_number-1]->get('player'.$this->player_side.'_decision');
+		if (!$this->move_sequence->rec_exists($move_number-1))	throw new Exception("Move history unreacheable");
+		return $this->move_sequence->get($move_number-1, 'player'.$this->player_side.'_decision');
 	}
 };
