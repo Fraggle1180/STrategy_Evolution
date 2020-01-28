@@ -37,15 +37,51 @@ interface fsb_saveable	{
 
 
 ###############################################################################
-# DataRecord: единичный экземпляр данных (одна запись), находящийся в памяти
-# Функции:    get, set, get_change_flag, set_change_flag
+# DataMode: служебный класс для управления режимами raw / trusted
 
-abstract class fsb_model_datarecord implements fsb_datarecord	{
+class fsb_datamode	{
+	protected $can_save;
+	protected $should_check;
+
+	protected function set_mode($mode)	{
+		if ($mode == 'raw')	{
+			$this->can_save		= false;
+			$this->should_check	= false;
+			return true;
+		}
+
+		if ($mode == 'trusted')	{
+			$this->can_save		= true;
+			$this->should_check	= true;
+			return true;
+		}
+
+		throw new Exception("Unknown mode: $mode");
+	}
+
+	protected function can_save()	{
+		if (is_null($this->can_save))	throw new Exception("Field can_save is not defined");
+		return $this->can_save;
+	}
+
+	protected function should_check()	{
+		if (is_null($this->should_check))	throw new Exception("Field should_check is not defined");
+		return $this->should_check;
+	}
+}
+
+
+###############################################################################
+# DataRecord: единичный экземпляр данных (одна запись), находящийся в памяти
+
+abstract class fsb_model_datarecord extends fsb_datamode implements fsb_datarecord	{
 	protected $dataFields;
 	protected $dataFields_changes;
 
-	function __construct()	{
+	function __construct($mode = null)	{
 		$this->Create();
+
+		$this->set_mode(is_null($mode) ? 'trusted' : $mode);
 	}
 
 	function Create()	{
@@ -109,7 +145,6 @@ abstract class fsb_model_datarecord implements fsb_datarecord	{
 
 ###############################################################################
 # DatabaseRecord: единичный экземпляр данных (одна запись), находящийся в базе данных
-# Функции:    load, save, find
 # Наследует от:   DataRecord
 
 abstract class fsb_model_databaserecord	extends fsb_model_datarecord implements fsb_saveable {
@@ -240,16 +275,17 @@ abstract class fsb_model_databaserecord	extends fsb_model_datarecord implements 
 
 ###############################################################################
 # DataSet: набор данных (N записей), находящийся в памяти
-# Функции:    get, set, get_change_flag, set_change_flag, add, count, rec_exists
 
-abstract class fsb_model_dataset implements fsb_datatet	{
+abstract class fsb_model_dataset extends fsb_datamode implements fsb_datatet	{
 	protected $dataFields;
 	protected $dataFields_changes;
 
-	function __construct()	{
+	function __construct($mode = null)	{
 		$this->profiler = array( 'set_bulk' => new fsb_profiler, 'set_direct' => new fsb_profiler, 'add' => new fsb_profiler, 'append' => new fsb_profiler );
 		foreach( $this->profiler as &$prof )	$prof->Tick('ctrTour::game_run');
 		$this->reset();
+
+		$this->set_mode(is_null($mode) ? 'trusted' : $mode);
 	}
 
 	abstract function newRecord();
@@ -418,7 +454,6 @@ abstract class fsb_model_dataset implements fsb_datatet	{
 
 ###############################################################################
 # DatabaseRecord: набор данных (N записей), находящийся в базе данных
-# Функции:    load, save, find
 # Наследует от:   DataSet
 
 abstract class fsb_model_databaseset	extends fsb_model_dataset implements fsb_saveable {
