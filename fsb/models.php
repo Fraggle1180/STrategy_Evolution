@@ -1,10 +1,46 @@
 <?
 
 ###############################################################################
+# Интерфейсы доступа к данным:
+#    DataRecord: единичный экземпляр данных (одна запись)
+#    DataSet:    набор данных (N записей)
+#    Saveable:   имеет функции чтения-записи из/в БД
+
+interface fsb_datarecord	{
+	function get($field);			# получить значение поля
+	function get_record();			# получить всю запись целиком, как массив
+	function set($field, $value);		# установить значение поля
+	function set_bulk($fields);		# установить несколько полей
+	function get_change_flag($field);	# получить флаг изменения поля
+	function set_change_flag($field, $value);# установить флаг изменения поля
+}
+
+interface fsb_datatet	{
+	function get($num, $field);				# получить значение поля
+	function get_record($num);				# получить отдельную запись целиком, как массив
+	function get_all_records();				# получить все записи, как массив массивов
+	function set($num, $field, $value, $allow_add = false);	# установить значение поля;   allow_add разрешает/запрещает добавление записи num, если она отсутсвует
+	function set_bulk($num, $fields, $allow_add = false);	# установить несколько полей; allow_add разрешает/запрещает добавление записи num, если она отсутсвует
+	function get_change_flag($num, $field);			# получить флаг изменения поля
+	function set_change_flag($num, $field, $value);		# установить флаг изменения поля
+	function add($num = null, $allow_overwrite = false);	# добавить пустую запись; либо с указанным номером num, либо последняя; если запись с номером num уже существует - allow_overwrite разрешает/запрещает её перезаписать
+	function append($record);				# добавить в конец указанную запись
+	function tail($dataset);				# добавить в конец набор записей
+	function count();					# возвращает количество записей в наборе
+}
+
+interface fsb_saveable	{
+	function load($keys);	# загрузить из БД данные с указанным первичным ключем / ключами
+	function save();	# сохранить в БД данные
+	function find($cond);	# найти в БД записи, соотвествующие условию
+}
+
+
+###############################################################################
 # DataRecord: единичный экземпляр данных (одна запись), находящийся в памяти
 # Функции:    get, set, get_change_flag, set_change_flag
 
-abstract class fsb_model_datarecord	{
+abstract class fsb_model_datarecord implements fsb_datarecord	{
 	protected $dataFields;
 	protected $dataFields_changes;
 
@@ -76,7 +112,7 @@ abstract class fsb_model_datarecord	{
 # Функции:    load, save, find
 # Наследует от:   DataRecord
 
-abstract class fsb_model_databaserecord	extends fsb_model_datarecord {
+abstract class fsb_model_databaserecord	extends fsb_model_datarecord implements fsb_saveable {
 	protected $db;
 	protected $dbFields;
 
@@ -206,7 +242,7 @@ abstract class fsb_model_databaserecord	extends fsb_model_datarecord {
 # DataSet: набор данных (N записей), находящийся в памяти
 # Функции:    get, set, get_change_flag, set_change_flag, add, count, rec_exists
 
-abstract class fsb_model_dataset	{
+abstract class fsb_model_dataset implements fsb_datatet	{
 	protected $dataFields;
 	protected $dataFields_changes;
 
@@ -385,7 +421,7 @@ abstract class fsb_model_dataset	{
 # Функции:    load, save, find
 # Наследует от:   DataSet
 
-abstract class fsb_model_databaseset	extends fsb_model_dataset {
+abstract class fsb_model_databaseset	extends fsb_model_dataset implements fsb_saveable {
 	protected $db;
 	protected $dbFields;
 
