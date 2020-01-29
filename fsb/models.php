@@ -38,35 +38,51 @@ interface fsb_saveable	{
 
 ###############################################################################
 # DataMode: служебный класс для управления режимами raw / trusted
+# Режимы:
+#    raw:     проверка наименований полей не производится, проверка изменений в данных не производится, сохранение в БД не производится
+#    trusted: производится проверка наименований полей,    производится проверка изменений в данных,    производится сохранение в БД
 
 class fsb_datamode	{
-	protected $can_save;
-	protected $should_check;
+	protected $can_DB_save;
+	protected $should_check_field;
+	protected $should_check_change;
 
-	protected function set_mode($mode)	{
+
+	function __construct()	{
+		$this->set_mode('trusted');
+	}
+
+	function set_mode($mode)	{
 		if ($mode == 'raw')	{
-			$this->can_save		= false;
-			$this->should_check	= false;
+			$this->can_DB_save		= false;
+			$this->should_check_field	= false;
+			$this->should_check_change	= false;
 			return true;
 		}
 
 		if ($mode == 'trusted')	{
-			$this->can_save		= true;
-			$this->should_check	= true;
+			$this->can_DB_save		= true;
+			$this->should_check_field	= true;
+			$this->should_check_change	= true;
 			return true;
 		}
 
 		throw new Exception("Unknown mode: $mode");
 	}
 
-	protected function can_save()	{
-		if (is_null($this->can_save))	throw new Exception("Field can_save is not defined");
-		return $this->can_save;
+	protected function can_DB_save()	{
+		if (is_null($this->can_DB_save))	$this->set_mode('trusted');
+		return $this->can_DB_save;
 	}
 
-	protected function should_check()	{
-		if (is_null($this->should_check))	throw new Exception("Field should_check is not defined");
-		return $this->should_check;
+	protected function should_check_field()	{
+		if (is_null($this->should_check_field))	$this->set_mode('trusted');
+		return $this->should_check_field;
+	}
+
+	protected function should_check_change()	{
+		if (is_null($this->should_check_change))	$this->set_mode('trusted');
+		return $this->should_check_change;
 	}
 }
 
@@ -78,23 +94,26 @@ abstract class fsb_model_datarecord extends fsb_datamode implements fsb_datareco
 	protected $dataFields;
 	protected $dataFields_changes;
 
-	function __construct($mode = null)	{
+	function __construct()	{
+		parent::__construct();
 		$this->Create();
-
-		$this->set_mode(is_null($mode) ? 'trusted' : $mode);
 	}
 
 	function Create()	{
 		$this->FillDataFields();
 
-		foreach( $this->dataFields as $key => $val)
-			$this->dataFields_changes[$key] = false;
+		if ($this->should_check_change())
+			foreach( $this->dataFields as $key => $val)
+				$this->dataFields_changes[$key] = false;
 	}
 
 	abstract function FillDataFields();
 
 	function get($field)	{
-		return ($this->key_exists($field)) ? $this->dataFields[$field] : null;
+		if ($this->should_check_field())
+			return ($this->key_exists($field)) ? $this->dataFields[$field] : null;
+		else
+			return $this->dataFields[$field];
 	}
 
 	function get_record()	{
@@ -106,7 +125,12 @@ abstract class fsb_model_datarecord extends fsb_datamode implements fsb_datareco
 	}
 
 	function get_change_flag($field)	{
-		return ($this->key_change_exists($field)) ? $this->dataFields_changes[$field] : null;
+		if (!$this->should_check_change())	return null;
+
+		if ($this->should_check_field())
+			return ($this->key_change_exists($field)) ? $this->dataFields_changes[$field] : null;
+		else
+			return $this->dataFields_changes[$field];
 	}
 
 	function set_change_flag($field, $value)	{
@@ -115,28 +139,44 @@ abstract class fsb_model_datarecord extends fsb_datamode implements fsb_datareco
 	}
 
 	function set_bulk($fields)	{
-		$return = true;
+		if ($this->should_check_field())	{
+			$return = true;
 
-		foreach( $fields as $field => $value )
-			if (!$this->set($field, $value))
-				$return = false;
+			foreach( $fields as $field => $value )
+				if (!$this->set($field, $value))
+					$return = false;
 
-		return $return;
+			return $return;
+		}	else	{
+			$this->dataFields = $fields;
+
+			if ($this->should_check_change())
+				foreach( $fields as $field => $value )
+					$this->set_change_flag($field, true);
+		}
 	}
 
 	protected function setDirect($field, $value)	{
-		if (!$this->key_exists($field))	return false;
+		if ($this->should_check_field() and !$this->key_exists($field))	return false;
+
 		$this->dataFields[$field] = $value;
-		$this->set_change_flag($field, true);
+
+		if ($this->should_check_change())
+			$this->set_change_flag($field, true);
+
 		return true;
 	}
 
 	function key_exists($field)	{
+		if (!$this->should_check_field())	return true;
+
 		if (isset($this->dataFields[$field]))	return true;
 		return array_key_exists($field, $this->dataFields);
 	}
 
 	function key_change_exists($field)	{
+		if (!$this->should_check_field())	return true;
+
 		if (isset($this->dataFields_change[$field]))	return true;
 		return array_key_exists($field, $this->dataFields_changes);
 	}
@@ -179,6 +219,8 @@ abstract class fsb_model_databaserecord	extends fsb_model_datarecord implements 
 	}
 
 	function save()	{
+		if (!$this->can_DB_save())	return false;
+
 		$this->setDBFields();
 
 		$table = $this->getTableName();
@@ -186,11 +228,11 @@ abstract class fsb_model_databaserecord	extends fsb_model_datarecord implements 
 
 		$get_id	= $this->get($p_key);
 
-		if ($get_id<>'NULL')	{
+		if (!is_null($get_id) and ($get_id<>'NULL'))	{
 			$IDs = $this->find(array($p_key=>$get_id));
 			if (!$IDs)	$get_id = 'NULL';
 		}
-		$bNewRecord = ($get_id=='NULL');
+		$bNewRecord = (is_null($get_id) or ($get_id == 'NULL'));
 
 
 		if ($bNewRecord)	{
@@ -280,12 +322,14 @@ abstract class fsb_model_dataset extends fsb_datamode implements fsb_datatet	{
 	protected $dataFields;
 	protected $dataFields_changes;
 
-	function __construct($mode = null)	{
+	function __construct()	{
+		parent::__construct();
 		$this->profiler = array( 'set_bulk' => new fsb_profiler, 'set_direct' => new fsb_profiler, 'add' => new fsb_profiler, 'append' => new fsb_profiler );
-		foreach( $this->profiler as &$prof )	$prof->Tick('ctrTour::game_run');
+		foreach( $this->profiler as &$prof )	{
+			$prof->Tick('ctrTour::game_run');
+			$prof->set_mode(0);
+		}
 		$this->reset();
-
-		$this->set_mode(is_null($mode) ? 'trusted' : $mode);
 	}
 
 	abstract function newRecord();
@@ -296,14 +340,25 @@ abstract class fsb_model_dataset extends fsb_datamode implements fsb_datatet	{
 	}
 
 	function get($num, $field)	{
-		if (isset($this->dataFields[$num][$field]) or $this->rec_exists($num) or $this->key_exists($num, $field))
+		if (!$this->should_check_field())
 			return $this->dataFields[$num][$field];
+
+		if (isset($this->dataFields[$num][$field]))
+			return $this->dataFields[$num][$field];
+
+		if ($this->rec_exists($num) and $this->key_exists($num, $field))
+			return $this->dataFields[$num][$field];
+
 		return null;
 	}
 
 	function get_record($num)	{
+		if (!$this->should_check_field())
+			return $this->dataFields[$num];
+
 		if (isset($this->dataFields[$num]) or $this->rec_exists($num))
 			return $this->dataFields[$num];
+
 		return null;
 	}
 
@@ -312,8 +367,12 @@ abstract class fsb_model_dataset extends fsb_datamode implements fsb_datatet	{
 	}
 
 	function get_change_flag($num, $field)	{
-		if (isset($this->dataFields_changes[$num][$field]) or $this->rec_exists($num) or $this->key_exists($num, $field))
+		if (!$this->should_check_change())
+			return null;
+
+		if (isset($this->dataFields_changes[$num][$field]) or ($this->rec_exists($num) and $this->key_exists($num, $field)))
 			return $this->dataFields_changes[$num][$field];
+
 		return null;
 	}
 
@@ -327,32 +386,28 @@ abstract class fsb_model_dataset extends fsb_datamode implements fsb_datatet	{
 	}
 
 	function set_bulk($num, $fields, $allow_add = false)	{
-#$this->profiler['set_bulk']->Tick('ctrTour::game_run', '', 0);
 		if (!$this->rec_exists($num))	{
 			if (!$allow_add)	return false;
 			$this->add($num);
 		}
-#$this->profiler['set_bulk']->Tick('ctrTour::game_run');
 
 		$return = true;
 
-#$this->profiler['set_bulk']->Tick('ctrTour::game_run');
 		foreach( $fields as $field => $value )
 			if (!$this->setDirect($num, $field, $value))
 				$return = false;
 
-#$this->profiler['set_bulk']->Tick('ctrTour::game_run');
 		return $return;
 	}
 
 	protected function setDirect($num, $field, $value)	{
-#$this->profiler['set_direct']->Tick('ctrTour::game_run', '', 0);
-		if (!$this->key_exists($num, $field))	return false;
-#$this->profiler['set_direct']->Tick('ctrTour::game_run');
+		if ($this->should_check_field() and !$this->key_exists($num, $field))	return false;
+
 		$this->dataFields[$num][$field] = $value;
-#$this->profiler['set_direct']->Tick('ctrTour::game_run');
-		$this->set_change_flag($num, $field, true);
-#$this->profiler['set_direct']->Tick('ctrTour::game_run');
+
+		if ($this->should_check_change())
+			$this->set_change_flag($num, $field, true);
+
 		return true;
 	}
 
@@ -370,32 +425,25 @@ abstract class fsb_model_dataset extends fsb_datamode implements fsb_datatet	{
 	}
 
 	function add($num = null, $allow_overwrite = false)	{
-#$this->profiler['add']->Tick('ctrTour::game_run');
 		if (is_null($num))	{
-#$this->profiler['add']->Tick('ctrTour::game_run');
 			$this->dataFields[] = $this->newRecord();
-#$this->profiler['add']->Tick('ctrTour::game_run');
 			$newNum = key(array_slice($this->dataFields, -1, 1, true));	//  array_key_last($this->dataFields);
-#$this->profiler['add']->Tick('ctrTour::game_run');
 
-			foreach( $this->dataFields[$newNum] as $key => $val )
-				$this->set_change_flag($newNum, $key, true);
-#$this->profiler['add']->Tick('ctrTour::game_run');
+			if ($this->should_check_change())
+				foreach( $this->dataFields[$newNum] as $key => $val )
+					$this->set_change_flag($newNum, $key, true);
 
 			return $newNum;
 		}
 
 
-#$this->profiler['add']->Tick('ctrTour::game_run');
 		if ($this->rec_exists($num) and !$allow_overwrite)	return false;
-#$this->profiler['add']->Tick('ctrTour::game_run');
 
 		$this->dataFields[$num] = $this->newRecord();
-#$this->profiler['add']->Tick('ctrTour::game_run');
-		foreach( $this->dataFields[$num] as $key => $val )
-			$this->set_change_flag($num, $key, true);
+		if ($this->should_check_change())
+			foreach( $this->dataFields[$num] as $key => $val )
+				$this->set_change_flag($num, $key, true);
 
-#$this->profiler['add']->Tick('ctrTour::game_run');
 		return true;
 	}
 
@@ -405,19 +453,20 @@ abstract class fsb_model_dataset extends fsb_datamode implements fsb_datatet	{
 			if (isset($record[$key]))
 				$rec[$key] = $record[$key];
 
-		$rec_c = $rec;
-		foreach( $rec_c as $val )
-			$val = true;
-
 		$this->dataFields[] = $rec;
-		$newNum = key(array_slice($this->dataFields, -1, 1, true));	//  array_key_last($this->dataFields);
-		$this->dataFields_changes[$newNum] = $rec_c;
+
+
+		if ($this->should_check_change())	{
+			$rec_c = $rec;
+			foreach( $rec_c as &$val )
+				$val = true;
+
+			$newNum = key(array_slice($this->dataFields, -1, 1, true));	//  array_key_last($this->dataFields);
+			$this->dataFields_changes[$newNum] = $rec_c;
+		}
+
 
 		return true;
-/*
-		$new = $this->add();
-		return $this->set_bulk($new, $record);
-*/
 	}
 
 	function tail($dataset)	{
@@ -425,7 +474,9 @@ abstract class fsb_model_dataset extends fsb_datamode implements fsb_datatet	{
 
 		foreach( $dataset->dataFields as $key => $rec )	{
 			$this->dataFields[] = $dataset->dataFields[$key];
-			$this->dataFields_changes[] = $dataset->dataFields_changes[$key];
+
+			if ($this->should_check_change())
+				$this->dataFields_changes[] = $dataset->dataFields_changes[$key];
 		}
 	}
 
@@ -439,12 +490,16 @@ abstract class fsb_model_dataset extends fsb_datamode implements fsb_datatet	{
 	}
 
 	function key_exists($num, $field)	{
+		if (!$this->should_check_field())	return true;
+
 		if (isset($this->dataFields[$num][$field]))	return true;
 		if (!isset($this->dataFields[$num]))		return false;
 		return array_key_exists($field, $this->dataFields[$num]);
 	}
 
 	function key_change_exists($num, $field)	{
+		if (!$this->should_check_field())	return true;
+
 		if (isset($this->dataFields_change[$num][$field]))	return true;
 		if (!isset($this->dataFields_change[$num]))		return false;
 		return array_key_exists($field, $this->dataFields_changes[$num]);
@@ -494,6 +549,8 @@ abstract class fsb_model_databaseset	extends fsb_model_dataset implements fsb_sa
 	}
 
 	function save()	{
+		if (!$this->can_DB_save())	return false;
+
 		$this->setDBFields();
 
 		$table = $this->getTableName();

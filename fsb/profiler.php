@@ -2,9 +2,11 @@
 
 class fsb_profiler	{
 	protected $data;
+	protected $mode;
 
 	function __construct()	{
 		$this->data = array();
+		$this->set_mode(1);
 	}
 
 	function __destruct()	{
@@ -16,7 +18,13 @@ class fsb_profiler	{
 		}
 	}
 
+	function set_mode($mode)	{
+		$this->mode = $mode;
+	}
+
 	function Tick($section='common', $linesuffix='', $useDuration=true)	{
+		if (!$this->mode)	return;
+
 		$sc = (is_array($section)) ? md5(print_r($section, 1)) : $section;
 
 		if (isset($this->data[$sc]))	{

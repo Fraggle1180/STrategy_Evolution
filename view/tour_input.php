@@ -9,7 +9,7 @@ $total_players = 100;
 <input type="hidden" name="total_players" value="<?= $total_players ?>">
 
 <table width="360px" border="1">
-<tr><td>
+<tr><td rowspan="2">
 
 <table>
 <tr>
@@ -38,6 +38,15 @@ $total_players = 100;
 </table>
 
 </td>
+<td align="left">
+
+<b>Игры и ходы:</b><br>
+<input type="radio" name="gm_save" value="yes" checked><label for="gm_save"> сохранять</label><br>
+<input type="radio" name="gm_save" value="no"><label for="gm_notsave"> не сохранять</label>
+
+</td></tr>
+
+<tr>
 <td align="center">
 
 <input type="submit" value="Запустить!">

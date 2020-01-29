@@ -55,7 +55,7 @@ $duration = (($dur_d) ? "$dur_d дн. " : '') . (($dur_h) ? "$dur_h ч. " : '') 
 
 <tr>
 <td><b>Время:</b></td>
-<td align="right"><?= $stats['time'] ?>&nbsp;сек</td>
+<td align="right"><?= round($stats['time'], 3) ?>&nbsp;сек</td>
 <td></td>
 <td align="right"><nobr><?= $duration ?></nobr></td>
 </tr>

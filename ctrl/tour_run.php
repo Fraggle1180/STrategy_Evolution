@@ -1,29 +1,4 @@
 <?
-/* /
-include_once('common/models/tour.php');
-include_once('common/controllers/tour.php');
-
-
-$profiler = new fsb_profiler;
-$profiler->Tick('ctrTour::game_run');
-
-$mov = new modMove();
-
-$profiler->Tick('ctrTour::game_run');
-$n = 1000;
-
-for( $i = 0; $i < $n; $i++ )
-	$mov->append(array( 'id_game' => -1, 'number_move' => -1, 'player1_decision' => -1, 'player2_decision' => -1, 'player1_action' => -1, 'player2_action' => -1, 'player1_perception' => -2, 'player2_perception' => -2));
-
-$profiler->Tick('ctrTour::game_run');
-$mov->save();
-
-$profiler->Tick('ctrTour::game_run');
-
-return;
-####################
-/* */
-
 include_once('common/models/tour.php');
 include_once('common/controllers/tour.php');
 
@@ -38,6 +13,7 @@ $ctrTour->set_param('result2',	$_REQUEST['result2']);
 $ctrTour->set_param('noise_in',	$_REQUEST['noise_in']);
 $ctrTour->set_param('noise_out',$_REQUEST['noise_out']);
 $ctrTour->set_param('gamelen',	$_REQUEST['gamelen']);
+$ctrTour->set_param('gm_save',	($_REQUEST['gm_save'] == 'yes') ? 1 : 0);
 
 $totalPlayers = $_REQUEST['total_players'];
 for ( $n = 1; $n <= $totalPlayers; $n++ )	{
