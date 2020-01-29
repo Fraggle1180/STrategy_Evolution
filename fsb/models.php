@@ -324,11 +324,6 @@ abstract class fsb_model_dataset extends fsb_datamode implements fsb_datatet	{
 
 	function __construct()	{
 		parent::__construct();
-		$this->profiler = array( 'set_bulk' => new fsb_profiler, 'set_direct' => new fsb_profiler, 'add' => new fsb_profiler, 'append' => new fsb_profiler );
-		foreach( $this->profiler as &$prof )	{
-			$prof->Tick('ctrTour::game_run');
-			$prof->set_mode(0);
-		}
 		$this->reset();
 	}
 
