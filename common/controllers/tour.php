@@ -200,6 +200,8 @@ class ctrTour	{
 
 		$p1_score = 0;
 		$p2_score = 0;
+		$g_p1r = ($this->param['gm_save']) ? $mod_games->get($game_ind, 'player1_result') : 0;
+		$g_p2r = ($this->param['gm_save']) ? $mod_games->get($game_ind, 'player2_result') : 0;
 
 		for ( $m = 1; $m <= $p_gamelen; $m++ )	{
 			$p1_decision = $pl_strategy1->MakeMove();
@@ -226,14 +228,17 @@ class ctrTour	{
 			$p1_score += $p1_result;
 			$p2_score += $p2_result;
 
-			if ($this->param['gm_save'])	{
-				$mod_games->set($game_ind, 'player1_result', $mod_games->get($game_ind, 'player1_result') + $p1_result);
-				$mod_games->set($game_ind, 'player2_result', $mod_games->get($game_ind, 'player2_result') + $p2_result);
-			}
+			$g_p1r += $p1_result;
+			$g_p2r += $p2_result;
 		}
 
 		$mod_players->set(($pl1-1), 'player_result', $mod_players->get(($pl1-1), 'player_result') + $p1_score);
 		$mod_players->set(($pl2-1), 'player_result', $mod_players->get(($pl2-1), 'player_result') + $p2_score);
+
+		if ($this->param['gm_save'])	{
+			$mod_games->set($game_ind, 'player1_result', $g_p1r);
+			$mod_games->set($game_ind, 'player2_result', $g_p2r);
+		}
 
 
 		$this->stats['moves'] += $p_gamelen;
