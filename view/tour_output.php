@@ -8,9 +8,17 @@
 <td><b>Результат</b></td>
 </tr>
 <?
+$max_width  = 400;
+$max_result = $this->data['tour_result']['rating'][1][0]['result'];
+
 foreach( $this->data['tour_result']['rating'] as $rank => $players )	{
 ?>
-<tr><td colspan="3" align="center"><b>Место <?= $rank ?></b></td></tr>
+<tr><td colspan="3" align="center">
+<table width="100%">
+<tr><td align="center"><b>Место <?= $rank ?></b><br></td></tr>
+<tr><td align="left"><img src="./img/img.php?rgb=506c78" width="<?= round($max_width * $players[0]['result'] / $max_result) ?>" height="8"></td></tr>
+</table>
+</td></tr>
 <?
 	foreach( $players as $player )	{
 ?>
