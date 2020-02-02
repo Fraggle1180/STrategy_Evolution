@@ -75,14 +75,13 @@ class ctrTour	{
 			$this->stats['players']++;
 
 
-			$index = $mod_players->add();
-			$this->players[$p]['index'] = $index;
+			$mod_players->add($p);
 
 			$st = $this->players[$p]['strategy'];
 			$pr = $this->players[$p]['params'];
 			$db = $st . ((is_null($pr) or !$pr) ? '' : " ($pr)");
 
-			$mod_players->set_bulk($index, array( 'id_tournament' => $this->data['tour_id'], 'player_number' => $p, 'player_strategy' => $db, 'player_result' => 0 ));
+			$mod_players->set_bulk($p, array( 'id_tournament' => $this->data['tour_id'], 'player_number' => $p, 'player_strategy' => $db, 'player_result' => 0 ));
 		}
 
 		$mod_players->save();
@@ -232,8 +231,8 @@ class ctrTour	{
 			$g_p2r += $p2_result;
 		}
 
-		$mod_players->set(($pl1-1), 'player_result', $mod_players->get(($pl1-1), 'player_result') + $p1_score);
-		$mod_players->set(($pl2-1), 'player_result', $mod_players->get(($pl2-1), 'player_result') + $p2_score);
+		$mod_players->set($pl1, 'player_result', $mod_players->get($pl1, 'player_result') + $p1_score);
+		$mod_players->set($pl2, 'player_result', $mod_players->get($pl2, 'player_result') + $p2_score);
 
 		if ($this->param['gm_save'])	{
 			$mod_games->set($game_ind, 'player1_result', $g_p1r);
