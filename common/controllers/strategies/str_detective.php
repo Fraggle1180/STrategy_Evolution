@@ -28,4 +28,8 @@ class ctrStrategy_detective extends ctrStrategy_copycat {
 	function setParam($param = null)	{
 		return true;
 	}
+
+	function getColor()	{
+		return 'ffd46d';
+	}
 };

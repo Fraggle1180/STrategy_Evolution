@@ -23,4 +23,23 @@ class ctrStrategy_random extends ctrStrategy {
 
 		return false;
 	}
+
+	function getColor()	{
+		$r = 116;
+		$g = 250;
+		$b =  30;
+
+		$above = ($this->random_level >= 50);
+
+		$dr = ($above) ?  2.317 :  1.867;
+		$dg = ($above) ? -1.300 :  4.167;
+		$db = ($above) ?  3.383 : -0.567;
+
+		$fr = round($r + ($this->random_level - 50) * $dr, 0);
+		$fg = round($g + ($this->random_level - 50) * $dg, 0);
+		$fb = round($b + ($this->random_level - 50) * $db, 0);
+
+
+		return substr('0'.dechex($fr), -2, 2) . substr('0'.dechex($fg), -2, 2) . substr('0'.dechex($fb), -2, 2);
+	}
 };

@@ -66,6 +66,7 @@ abstract class ctrStrategy	{
 
 	abstract protected function MakeDecision();
 	abstract function setParam($param = null);
+	abstract function getColor();
 
 	function MakeMove()	{
 		$this->current_move++;

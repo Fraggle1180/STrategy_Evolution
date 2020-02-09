@@ -10,4 +10,8 @@ class ctrStrategy_give extends ctrStrategy {
 	function setParam($param = null)	{
 		return true;
 	}
+
+	function getColor()	{
+		return 'fface9';
+	}
 };

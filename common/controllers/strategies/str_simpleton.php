@@ -19,4 +19,8 @@ class ctrStrategy_simpleton extends ctrStrategy_copycat {
 	function setParam($param = null)	{
 		return true;
 	}
+
+	function getColor()	{
+		return '478391';
+	}
 };

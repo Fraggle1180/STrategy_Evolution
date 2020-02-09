@@ -56,4 +56,23 @@ class ctrStrategy_copycat_rebalance extends ctrStrategy_copycat {
 
 		return false;
 	}
+
+	function getColor()	{
+		$r =  37;
+		$g = 202;
+		$b = 224;
+
+		$d = ($this->rebalance_moves_number > 0) ? round(log($this->rebalance_moves_number, 2), 0) : 0;
+
+		$dr = 1;
+		$dg = 3;
+		$db = 3;
+
+		$fr = $r + $d * $dr;
+		$fg = $g + $d * $dg;
+		$fb = $b + $d * $db;
+
+
+		return substr('0'.dechex($fr), -2, 2) . substr('0'.dechex($fg), -2, 2) . substr('0'.dechex($fb), -2, 2);
+	}
 };

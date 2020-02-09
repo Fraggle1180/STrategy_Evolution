@@ -19,4 +19,8 @@ class ctrStrategy_unforgiving extends ctrStrategy {
 	function setParam($param = null)	{
 		return true;
 	}
+
+	function getColor()	{
+		return '813000';
+	}
 };

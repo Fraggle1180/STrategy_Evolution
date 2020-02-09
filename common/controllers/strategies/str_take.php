@@ -10,4 +10,8 @@ class ctrStrategy_take extends ctrStrategy {
 	function setParam($param = null)	{
 		return true;
 	}
+
+	function getColor()	{
+		return '040040';
+	}
 };
