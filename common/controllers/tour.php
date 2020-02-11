@@ -46,7 +46,7 @@ class ctrTour	{
 	protected function run_init()	{
 		# общие данные
 		$this->stats	= array( 'time' => microtime(true), 'players' => 0, 'games' => 0, 'moves' => 0 );
-		$this->models	= array( 'tour' => new modTour(), 'players' => new modPlayerInTournament() );
+		$this->models	= array( 'tour' => new modTour(), 'players' => new modPlayerInTournament(), 'strategies' => array() );
 
 		if ($this->param['gm_save'])	{
 			$this->models['games'] = new modGame();
@@ -69,6 +69,8 @@ class ctrTour	{
 
 		# параметры игроков
 		$mod_players = & $this->models['players'];
+		$strategies  = & $this->models['strategies'];
+
 		for( $p = 1; $p <= $this->players['max_num']; $p++ )	{
 			if (!array_key_exists($p, $this->players) or is_null($this->players[$p]))	continue;
 
@@ -82,6 +84,11 @@ class ctrTour	{
 			$db = $st . ((is_null($pr) or !$pr) ? '' : " ($pr)");
 
 			$mod_players->set_bulk($p, array( 'id_tournament' => $this->data['tour_id'], 'player_number' => $p, 'player_strategy' => $db, 'player_result' => 0 ));
+
+
+			$str_class	= ctrStrategy::getClass_byName($st);
+			$strategies[$p]	= new $str_class();
+			$strategies[$p]->setParam($pr);
 		}
 
 		$mod_players->save();
@@ -181,15 +188,19 @@ class ctrTour	{
 		# две стороны игры
 		$mod_players	= & $this->models['players'];
 
-		$player1	= $this->players[$pl1];
-		$str_class1	= ctrStrategy::getClass_byName($player1['strategy']);
-		$pl_strategy1	= new $str_class1($move_sequence, 1);
-		$pl_strategy1->setParam($player1['params']);
+		#$player1	= $this->players[$pl1];
+		#$str_class1	= ctrStrategy::getClass_byName($player1['strategy']);
+		#$pl_strategy1	= new $str_class1($move_sequence, 1);
+		#$pl_strategy1->setParam($player1['params']);
 
-		$player2	= $this->players[$pl2];
-		$str_class2	= ctrStrategy::getClass_byName($player2['strategy']);
-		$pl_strategy2	= new $str_class2($move_sequence, 2);
-		$pl_strategy1->setParam($player1['params']);
+		#$player2	= $this->players[$pl2];
+		#$str_class2	= ctrStrategy::getClass_byName($player2['strategy']);
+		#$pl_strategy2	= new $str_class2($move_sequence, 2);
+		#$pl_strategy1->setParam($player1['params']);
+
+
+		#$mod_players->set($pl1, 'player_color', $pl_strategy1->getColor());
+		#$mod_players->set($pl2, 'player_color', $pl_strategy2->getColor());
 
 
 		# моделировать игру

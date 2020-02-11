@@ -9,7 +9,7 @@ abstract class ctrStrategy	{
 	protected $current_move;
 	protected $param;
 
-	function __construct(&$move_sequence, $player_side)	{
+	function set_move_sequence(&$move_sequence, $player_side)	{
 		$this->move_sequence	= &$move_sequence;
 		$this->move_sequence_type = (gettype($this->move_sequence) == 'object') ? 'set' : 'array';
 
@@ -17,8 +17,6 @@ abstract class ctrStrategy	{
 
 		$this->current_move	= 0;
 		$this->zero_move	= ($this->move_sequence_type == 'set') ? $this->move_sequence->count() : count($this->move_sequence);
-
-		$this->setParam();
 	}
 
 	static function getClass_byName($name)	{
