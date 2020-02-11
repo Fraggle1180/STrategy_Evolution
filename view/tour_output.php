@@ -1,3 +1,7 @@
+<?
+#var_dump($this->data['tour_result']['rating']);
+#return;
+?>
 <h2>Результаты тура</h2>
 
 <table border="1">
@@ -14,11 +18,12 @@ $max_result = $this->data['tour_result']['rating'][1][0]['result'];
 if ($max_result <= 0)	$max_result = 1;
 
 foreach( $this->data['tour_result']['rating'] as $rank => $players )	{
+	$col = (isset($players[0]['color'])) ? $players[0]['color'] : '506c78';
 ?>
 <tr><td colspan="3" align="center">
 <table width="100%">
 <tr><td align="center"><b>Место <?= $rank ?></b><br></td></tr>
-<tr><td align="left"><img src="./img/img.php?rgb=506c78" width="<?= $min_width + round($max_width * $players[0]['result'] / $max_result) ?>" height="8"></td></tr>
+<tr><td align="left"><img src="./img/img.php?rgb=<?= $col ?>" width="<?= $min_width + round($max_width * $players[0]['result'] / $max_result) ?>" height="8"></td></tr>
 </table>
 </td></tr>
 <?
