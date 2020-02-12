@@ -34,8 +34,13 @@ if (!$ctrTour->check_params_enough())	{
 
 
 #провести тур
-$ctrTour->run();
-
+try {
+  $ctrTour->run();
+}
+catch (Exception $e)	{
+  print("<pre>"); print_r($e); print("</pre>\n");
+  return;
+}
 
 #взять результаты из ctrTour, занести в data
 $this->data['tour_result'] = $ctrTour->get_results();
