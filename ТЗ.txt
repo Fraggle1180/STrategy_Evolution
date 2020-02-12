@@ -40,6 +40,7 @@
     select distinct t.id from d_tournament t where t.id=
     select distinct t.id from d_player_in_tournament t where t.id=
     select distinct t.id from d_game t where t.id=
+  Стратегия random(0) отображается в результатах без параметра
 
 
 Изменения 2020-01-24

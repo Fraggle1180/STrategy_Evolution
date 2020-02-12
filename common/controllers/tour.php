@@ -83,12 +83,15 @@ class ctrTour	{
 			$pr = $this->players[$p]['params'];
 			$db = $st . ((is_null($pr) or !$pr) ? '' : " ($pr)");
 
-			$mod_players->set_bulk($p, array( 'id_tournament' => $this->data['tour_id'], 'player_number' => $p, 'player_strategy' => $db, 'player_result' => 0 ));
-
 
 			$str_class	= ctrStrategy::getClass_byName($st);
 			$strategies[$p]	= new $str_class();
 			$strategies[$p]->setParam($pr);
+
+			$color = '#'.$strategies[$p]->getColor();
+
+
+			$mod_players->set_bulk($p, array( 'id_tournament' => $this->data['tour_id'], 'player_number' => $p, 'player_strategy' => $db, 'player_result' => 0, 'player_color' => $color ));
 		}
 
 		$mod_players->save();
@@ -188,19 +191,14 @@ class ctrTour	{
 		# две стороны игры
 		$mod_players	= & $this->models['players'];
 
-		#$player1	= $this->players[$pl1];
-		#$str_class1	= ctrStrategy::getClass_byName($player1['strategy']);
-		#$pl_strategy1	= new $str_class1($move_sequence, 1);
-		#$pl_strategy1->setParam($player1['params']);
+		$pl_strategy1	= $this->models['strategies'][$pl1];
+		$pl_strategy2	= $this->models['strategies'][$pl2];
 
-		#$player2	= $this->players[$pl2];
-		#$str_class2	= ctrStrategy::getClass_byName($player2['strategy']);
-		#$pl_strategy2	= new $str_class2($move_sequence, 2);
-		#$pl_strategy1->setParam($player1['params']);
+		$pl_strategy1->clear_move_sequence();
+		$pl_strategy2->clear_move_sequence();
 
-
-		#$mod_players->set($pl1, 'player_color', $pl_strategy1->getColor());
-		#$mod_players->set($pl2, 'player_color', $pl_strategy2->getColor());
+		$pl_strategy1->set_move_sequence($move_sequence, 1);
+		$pl_strategy2->set_move_sequence($move_sequence, 2);
 
 
 		# моделировать игру
@@ -214,8 +212,8 @@ class ctrTour	{
 		$g_p2r = ($this->param['gm_save']) ? $mod_games->get($game_ind, 'player2_result') : 0;
 
 		for ( $m = 1; $m <= $p_gamelen; $m++ )	{
-			$p1_decision = $pl_strategy1->MakeMove();
-			$p2_decision = $pl_strategy2->MakeMove();
+			$p1_decision = $pl_strategy1->MakeMove(1);
+			$p2_decision = $pl_strategy2->MakeMove(2);
 
 			$p1_action   = (rand(1, 100) > $p_noise_in) ? $p1_decision : (1 - $p1_decision);
 			$p2_action   = (rand(1, 100) > $p_noise_in) ? $p2_decision : (1 - $p2_decision);
