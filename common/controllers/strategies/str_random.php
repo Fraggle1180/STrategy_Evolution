@@ -5,9 +5,9 @@ include_once('common.php');
 class ctrStrategy_random extends ctrStrategy {
 	protected $random_level;
 
-	protected function MakeDecision()	{
-		if (rand(1, 100) <= $this->random_level)	return 0;
-		return 1;
+	protected function MakeDecision($player_side)	{
+		if (rand(1, 100) <= $this->random_level)	return 1;
+		return 0;
 	}
 
 	function setParam($param = null)	{
@@ -40,6 +40,6 @@ class ctrStrategy_random extends ctrStrategy {
 		$fb = round($b + ($this->random_level - 50) * $db, 0);
 
 
-		return substr('0'.dechex($fr), -2, 2) . substr('0'.dechex($fg), -2, 2) . substr('0'.dechex($fb), -2, 2);
+		return strval(substr('0'.dechex($fr), -2, 2) . substr('0'.dechex($fg), -2, 2) . substr('0'.dechex($fb), -2, 2));
 	}
 };

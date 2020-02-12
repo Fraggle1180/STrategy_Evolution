@@ -5,11 +5,11 @@ include_once('common.php');
 class ctrStrategy_unforgiving extends ctrStrategy {
 	protected $wasBetrayed;
 
-	protected function MakeDecision()	{
-		if ($this->current_move == 1)	{
+	protected function MakeDecision($player_side)	{
+		if ($this->current_move[$player_side] == 1)	{
 			$this->wasBetrayed = 0;
 		}	else	{
-			if ($this->getOtherSideLastMove() == 0)
+			if ($this->getOtherSideLastMove($player_side) == 0)
 				$this->wasBetrayed = 1;
 		}
 

@@ -7,15 +7,15 @@ class ctrStrategy_copycat_trusted extends ctrStrategy_copycat_rebalance {
 	protected $trust_level;
 	protected $wasTrustEstablished;
 
-	protected function MakeDecision()	{
-		if ($this->current_move == 1)	$this->wasTrustEstablished = false;
+	protected function MakeDecision($player_side)	{
+		if ($this->current_move[$player_side] == 1)	$this->wasTrustEstablished = false;
 
-		if ($this->current_move <= $this->trust_period)	return ctrStrategy_copycat::MakeDecision();
+		if ($this->current_move[$player_side] <= $this->trust_period)	return ctrStrategy_copycat::MakeDecision($player_side);
 
 		# проверить, возникло ли доверие
 		if (!$this->wasTrustEstablished)	{
 			for( $pos_moves = 0, $n = 1; $n <= $this->trust_period; $n++ )	{
-				if ($this->getOtherSideMove($n) == 1)	$pos_moves++;
+				if ($this->getOtherSideMove($player_side, $n) == 1)	$pos_moves++;
 			}
 
 			if ($pos_moves >= $this->trust_period * $this->trust_level / 100.0)
@@ -23,7 +23,7 @@ class ctrStrategy_copycat_trusted extends ctrStrategy_copycat_rebalance {
 		}
 
 
-		return ($this->wasTrustEstablished) ? ctrStrategy_copycat_rebalance::MakeDecision() : ctrStrategy_copycat::MakeDecision();
+		return ($this->wasTrustEstablished) ? ctrStrategy_copycat_rebalance::MakeDecision($player_side) : ctrStrategy_copycat::MakeDecision($player_side);
 	}
 
 	function setParam($param = null)	{
@@ -63,6 +63,6 @@ class ctrStrategy_copycat_trusted extends ctrStrategy_copycat_rebalance {
 		$fb = $b + $d * $db;
 
 
-		return substr('0'.dechex($fr), -2, 2) . substr('0'.dechex($fg), -2, 2) . substr('0'.dechex($fb), -2, 2);
+		return strval(substr('0'.dechex($fr), -2, 2) . substr('0'.dechex($fg), -2, 2) . substr('0'.dechex($fb), -2, 2));
 	}
 };

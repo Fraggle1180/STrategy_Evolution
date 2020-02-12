@@ -3,7 +3,7 @@ include_once('common.php');
 
 # Всегда отдавать
 class ctrStrategy_give extends ctrStrategy {
-	protected function MakeDecision()	{
+	protected function MakeDecision($player_side)	{
 		return 1;
 	}
 

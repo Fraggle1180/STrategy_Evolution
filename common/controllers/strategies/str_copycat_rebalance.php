@@ -5,14 +5,14 @@ include_once('str_copycat.php');
 class ctrStrategy_copycat_rebalance extends ctrStrategy_copycat {
 	protected $rebalance_moves_number;
 
-	protected function MakeDecision()	{
-		if ($this->current_move <= $this->rebalance_moves_number)	return parent::MakeDecision();
+	protected function MakeDecision($player_side)	{
+		if ($this->current_move[$player_side] <= $this->rebalance_moves_number)	return parent::MakeDecision($player_side);
 
 
 		# проверить возникновение синусоиды
 		for( $moves = array(), $n = 1;	$n < $this->rebalance_moves_number; $n++ )	{
-			$my_move	= $this->getMyMove($n);
-			$other_move	= $this->getOtherSideMove($n);
+			$my_move	= $this->getMyMove($player_side, $n);
+			$other_move	= $this->getOtherSideMove($player_side, $n);
 
 			$kind = 'unknown';
 			if (($my_move == 0) and ($other_move == 1)) $kind = 'cheat';
@@ -40,7 +40,7 @@ class ctrStrategy_copycat_rebalance extends ctrStrategy_copycat {
 
 
 		# иначе - обычное копирование
-		return parent::MakeDecision();
+		return parent::MakeDecision($player_side);
 	}
 
 	function setParam($param = null)	{
@@ -73,6 +73,6 @@ class ctrStrategy_copycat_rebalance extends ctrStrategy_copycat {
 		$fb = $b + $d * $db;
 
 
-		return substr('0'.dechex($fr), -2, 2) . substr('0'.dechex($fg), -2, 2) . substr('0'.dechex($fb), -2, 2);
+		return strval(substr('0'.dechex($fr), -2, 2) . substr('0'.dechex($fg), -2, 2) . substr('0'.dechex($fb), -2, 2));
 	}
 };

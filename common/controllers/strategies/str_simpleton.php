@@ -5,14 +5,14 @@ include_once('str_copycat.php');
 class ctrStrategy_simpleton extends ctrStrategy_copycat {
 	protected $bRevert;
 
-	protected function MakeDecision()	{
-		if ($this->current_move == 1)	return 1;
+	protected function MakeDecision($player_side)	{
+		if ($this->current_move[$player_side] == 1)	return 1;
 
-		if ($this->current_move == 2)	{
-			$this->bRevert = ($this->getOtherSideLastMove() == 1) ? 0 : 1;
+		if ($this->current_move[$player_side] == 2)	{
+			$this->bRevert = ($this->getOtherSideLastMove($player_side) == 1) ? 0 : 1;
 		}
 
-		$last_res  = parent::MakeDecision();
+		$last_res  = parent::MakeDecision($player_side);
 		return $this->bRevert ? (1 - $last_res) : $last_res;
 	}
 

@@ -5,9 +5,9 @@ include_once('str_copycat.php');
 class ctrStrategy_copycat_forgiving extends ctrStrategy_copycat {
 	protected $remember_moves_number;
 
-	protected function MakeDecision()	{
+	protected function MakeDecision($player_side)	{
 		for( $best_move = null, $n = 1;	$n <= $this->remember_moves_number; $n++ )	{
-			try { $move = $this->getOtherSideMove($n); }
+			try { $move = $this->getOtherSideMove($player_side, $n); }
 			catch (Exception $e) { continue; }
 
 			$best_move = (is_null($best_move)) ? $move : max($best_move, $move);
@@ -46,6 +46,6 @@ class ctrStrategy_copycat_forgiving extends ctrStrategy_copycat {
 		$fb = $b + $d * $db;
 
 
-		return substr('0'.dechex($fr), -2, 2) . substr('0'.dechex($fg), -2, 2) . substr('0'.dechex($fb), -2, 2);
+		return strval(substr('0'.dechex($fr), -2, 2) . substr('0'.dechex($fg), -2, 2) . substr('0'.dechex($fb), -2, 2));
 	}
 };
