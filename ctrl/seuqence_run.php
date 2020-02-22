@@ -9,16 +9,16 @@ $cond_req = (isset($_REQUEST['condition'])) ? $_REQUEST['condition'] : '';
 $cond_ar  = explode("\n", $cond_req);
 
 
-# получить параметры из запроса
+# РїРѕР»СѓС‡РёС‚СЊ РїР°СЂР°РјРµС‚СЂС‹ РёР· Р·Р°РїСЂРѕСЃР°
 $m = array();
 $cur_section = '';
 
 foreach( $cond_ar as $cond_line )	{
-	# пустые строки не обрабатываются
+	# РїСѓСЃС‚С‹Рµ СЃС‚СЂРѕРєРё РЅРµ РѕР±СЂР°Р±Р°С‚С‹РІР°СЋС‚СЃСЏ
 	if (!trim($cond_line))	continue;
 
 
-	# проверить: название секции
+	# РїСЂРѕРІРµСЂРёС‚СЊ: РЅР°Р·РІР°РЅРёРµ СЃРµРєС†РёРё
 	$pm = preg_match('|\s*\[(.+)\]\s*|', $cond_line, $m);
 	if ($pm)	{
 		$cur_section = (isset($conditions[$m[1]])) ? $m[1] : '';
@@ -27,11 +27,11 @@ foreach( $cond_ar as $cond_line )	{
 	}
 
 
-	# ниже этой строки обрабатываются только параметры
+	# РЅРёР¶Рµ СЌС‚РѕР№ СЃС‚СЂРѕРєРё РѕР±СЂР°Р±Р°С‚С‹РІР°СЋС‚СЃСЏ С‚РѕР»СЊРєРѕ РїР°СЂР°РјРµС‚СЂС‹
 	if (!$cur_section)	continue;
 
 
-	# проверить: параметр "равенство"
+	# РїСЂРѕРІРµСЂРёС‚СЊ: РїР°СЂР°РјРµС‚СЂ "СЂР°РІРµРЅСЃС‚РІРѕ"
 	$pm = preg_match('|\s*(.+)\s*=\s*(.+)\s*|', $cond_line, $m);
 	if ($pm and isset($m[1]) and isset($m[2]))	{
 		if (array_key_exists($m[1], $conditions[$cur_section]))
@@ -41,7 +41,7 @@ foreach( $cond_ar as $cond_line )	{
 	}
 
 
-	# проверить: параметр "стратегия"
+	# РїСЂРѕРІРµСЂРёС‚СЊ: РїР°СЂР°РјРµС‚СЂ "СЃС‚СЂР°С‚РµРіРёСЏ"
 	$pm = preg_match('|\s*([_a-z]+)\s*(\((.+)\))?\s*(x.+)?\s*?|', $cond_line, $m);
 	if ($pm)	{
 		$str = $m[1];
@@ -68,7 +68,7 @@ foreach( $cond_ar as $cond_line )	{
 }
 
 
-# дозаполнить параметры
+# РґРѕР·Р°РїРѕР»РЅРёС‚СЊ РїР°СЂР°РјРµС‚СЂС‹
 if (is_null($conditions['tour']['price1']))	$conditions['tour']['price1'] = $conditions['tour']['price'];
 if (is_null($conditions['tour']['price2']))	$conditions['tour']['price2'] = $conditions['tour']['price'];
 
@@ -87,7 +87,7 @@ if (!is_null($conditions['variance']['dropout']) and is_null($conditions['varian
 }
 
 
-# проверить параметры
+# РїСЂРѕРІРµСЂРёС‚СЊ РїР°СЂР°РјРµС‚СЂС‹
 $check  = true;
 $errmsg = array();
 
@@ -95,14 +95,14 @@ $errmsg = array();
 #   variance: dropout = clone + count(strategy)
 if ($conditions['variance']['dropout'] <> $conditions['variance']['clone'] + count($conditions['variance']['strategy']))	{
 	$check  = false;
-	$errmsg[] = "Раздел variance: не совпадают количества dropout, clone и strategy (проверка: dropout = clone + strategy)";
+	$errmsg[] = "Р Р°Р·РґРµР» variance: РЅРµ СЃРѕРІРїР°РґР°СЋС‚ РєРѕР»РёС‡РµСЃС‚РІР° dropout, clone Рё strategy (РїСЂРѕРІРµСЂРєР°: dropout = clone + strategy)";
 }
 
 
-#   strategies: есть стратегий больше нуля
+#   strategies: РµСЃС‚СЊ СЃС‚СЂР°С‚РµРіРёР№ Р±РѕР»СЊС€Рµ РЅСѓР»СЏ
 if (count($conditions['strategies']) <= 0)	{
 	$check  = false;
-	$errmsg[] = "Раздел strategies: должна быть хотя бы одна стратегия";
+	$errmsg[] = "Р Р°Р·РґРµР» strategies: РґРѕР»Р¶РЅР° Р±С‹С‚СЊ С…РѕС‚СЏ Р±С‹ РѕРґРЅР° СЃС‚СЂР°С‚РµРіРёСЏ";
 }
 
 
@@ -110,6 +110,9 @@ $conditions['check']['result'] = $check;
 
 if (!$check)
 	$conditions['check']['error'] = implode("\n", $errmsg);
+
+
+$this->data['conditions'] = $conditions;
 
 
 
