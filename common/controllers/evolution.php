@@ -71,19 +71,19 @@ class ctrEvolution	{
 	protected function step_make_slice()	{
 		$slice = array();
 
-		foreach( $this->tour_result['rating'] as $place => $results )
-			foreach( $results as $result )	{
-				$str = $result['strategy'];
-				$col = $result['color'];
+		foreach( $this->tour_result['rating'] as $place => $strats )
+			foreach( $strats as $strat )	{
+				$name = $strat['strategy'];
+				$col  = $strat['color'];
 
-				if (preg_match('| |', $str))	{
-					$e = explode(' ', $str);
-					$str = $e[0];
+				if (preg_match('| |', $name))	{
+					$e = explode(' ', $name);
+					$name = $e[0];
 				}
 
-				if (!isset($slice[$str]))	$slice[$str] = array();
+				if (!isset($slice[$name]))	$slice[$name] = array();
 
-				$slice[$str][] = $col;
+				$slice[$name][] = $col;
 			}
 
 		ksort($slice);
@@ -92,8 +92,8 @@ class ctrEvolution	{
 
 		$slice2 = array();
 
-		foreach( $slice as $s )
-			foreach( $s as $col )
+		foreach( $slice as $str => $cols )
+			foreach( $cols as $col )
 				$slice2[] = $col;
 
 		$this->slice = $slice2;
@@ -156,7 +156,7 @@ class ctrEvolution	{
 	}
 
 	protected function step_is_more()	{
-		if ($this->tours_done < $this->param['lasting']['mintours'])	return true;
+		if ($this->tours_done <= $this->param['lasting']['mintours'])	return true;
 
 		return false;
 	}

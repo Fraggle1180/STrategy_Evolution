@@ -71,7 +71,7 @@ class ctrTour	{
 		$mod_players = & $this->models['players'];
 		$strategies  = & $this->models['strategies'];
 
-		for( $p = 1; $p <= $this->players['max_num']; $p++ )	{
+		foreach( $this->players as $p => $v )	if (is_numeric($p))	{
 			if (!array_key_exists($p, $this->players) or is_null($this->players[$p]))	continue;
 
 			$this->stats['players']++;
@@ -101,10 +101,10 @@ class ctrTour	{
 
 		# параметры игр
 		$mod_games = & $this->models['games'];
-		for( $p1 = 1; $p1 <= $this->players['max_num']; $p1++ )	{
+		foreach( $this->players as $p1 => $v )	if (is_numeric($p1))	{
 			if (!array_key_exists($p1, $this->players) or is_null($this->players[$p1]))	continue;
 
-			for( $p2 = 1; $p2 <= $this->players['max_num']; $p2++ )	{
+			foreach( $this->players as $p2 => $v )	if (is_numeric($p2))	{
 				if (!array_key_exists($p2, $this->players) or is_null($this->players[$p2]))	continue;
 
 				$game = array( 'id_tournament' => $this->data['tour_id'], 'player1_number' => $p1, 'player2_number' => $p2 );
